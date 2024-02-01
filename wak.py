@@ -39,30 +39,43 @@ with open( "wak.css" ) as css:
     st.markdown( f'<style>{css.read()}</style>' , unsafe_allow_html= True)
 
 
+st.markdown('''
+            <style>
+            /* font */
+            @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/variable/pretendardvariable-dynamic-subset.css");
+
+            *, *::before, *::after {
+                font-family: 'Pretendard Variable';
+            }
+            </style>
+            ''',unsafe_allow_html=True)
+
+
 
 # 사이드바
 with st.sidebar:
     with st.form(key ='searchform'):
-        summoner_name = st.text_input("search_summoner")
-        api_key = st.text_input("api_key",
+        summoner_name = st.text_input("summonerName")
+        api_key = st.text_input("API KEY",
                                 type = "password")     
         submit_search = st.form_submit_button()
 
+# submit button 시 riot api 및 전처리 함수가 실행됩니다.
 if submit_search :
     with st.spinner('''### 최근 경기 데이터 수집중..🎮'''):
         puuid, summoner_id, iconId = get_puuid(summoner_name, api_key)
         match_ids = get_match_ids(puuid, api_key)
-        match_info, champion_info = get_match_v5(match_ids, api_key)
+        match_info, champion_info = get_match_v5(match_ids, summoner_name, api_key)
         match_data_logs = get_match_data_logs(match_ids, api_key)  
-        kill_log, wakteam_death_log,victim_by_jungle = get_events(match_data_logs,champion_info,summoner_name)
-        nol_kill_log, chun_kill_log = duo_score(kill_log,champion_info,summoner_name)
+        all_kill_log, team_death_log, victim_by_jungle = get_events(match_data_logs,champion_info,summoner_name)
+        nol_kill_log, chun_kill_log = duo_score(all_kill_log,champion_info,summoner_name)
 
 
         rank_data = get_rank_info(summoner_id,api_key)
-        wak_radar_data, wak_vs_df = radar_chart(match_info,summoner_name,'MIDDLE')
+        summoner_radar_data, summoner_vs = radar_chart(match_info,summoner_name,'MIDDLE')
         
         log_df = gold_data(match_data_logs, match_ids)
-        gold_df = lose_match_gold_diff(log_df, summoner_name,'MIDDLE',champion_info)    
+        gold_df, lose_match_gold_by_team = lose_match_gold_diff(log_df, summoner_name,'MIDDLE',champion_info)    
 
 
         # info, match, champion
@@ -74,104 +87,109 @@ if submit_search :
         st.session_state.rank_data= rank_data
 
         # summoner,death,kill,gold
-        st.session_state.wak_radar_data = wak_radar_data
-        st.session_state.wak_vs_df = wak_vs_df
-        st.session_state.wakteam_death_log = wakteam_death_log
+        st.session_state.summoner_radar_data = summoner_radar_data
+        st.session_state.summoner_vs = summoner_vs
+        st.session_state.team_death_log = team_death_log
         st.session_state.victim_by_jungle = victim_by_jungle
-        st.session_state.kill_log = kill_log
+        st.session_state.all_kill_log = all_kill_log
         st.session_state.gold_df = gold_df
         st.session_state.log_df = log_df
+        st.session_state.lose_match_gold_by_team = lose_match_gold_by_team
+
         # duo
         st.session_state.nol_kill_log = nol_kill_log
         st.session_state.chun_kill_log = chun_kill_log
 
 
 
-
+# session_state
 if hasattr(st.session_state, 'puuid'):
     puuid = st.session_state.puuid
 
-if hasattr(st.session_state, 'wak_vs_df'):
-    wak_vs_df = st.session_state.wak_vs_df
+if hasattr(st.session_state, 'summoner_vs'):
+    summoner_vs = st.session_state.summoner_vs
 
     agg_columns = ['totalDamageDealtToChampions', 'totalCS10Minutes', 'soloKills', 'visionScore', 'damageDealtToBuildings']
     col= ['summonerName','챔피언딜량','10분CS','솔로킬','시야점수','타워피해량']
 
-    wak_static = wak_vs_df.groupby(['summonerName']).agg(
+    summoner_static = summoner_vs.groupby(['summonerName']).agg(
         **{column: pd.NamedAgg(column=column, aggfunc='mean') for column in agg_columns}
     ).reset_index().round()
-    wak_static.columns = col
-
+    summoner_static.columns = col
 
 # 매치 데이터
 if hasattr(st.session_state, 'match_info'):
     match_info = st.session_state.match_info    
     unique_match = match_info['matchId'].nunique()
     lose_match_cnt = len(match_info[(match_info['puuid'] == puuid) & (match_info['win']==False)]) 
-    wak_middle_lose = match_info[(match_info['summonerName'] == summoner_name)&(match_info['win']== False)&(match_info['teamPosition']== 'MIDDLE')]['matchId'].tolist()
-    wak_middle_lose_cnt = len(wak_middle_lose)
+ 
+    summoner_mid_lose = match_info[(match_info['summonerName'] == summoner_name)&(match_info['win']== False)&(match_info['teamPosition']== 'MIDDLE')]['matchId'].tolist()
+    summoner_mid_lose_cnt = len(summoner_mid_lose)
 
 
     cs_10 = match_info.groupby(['teamPosition']).agg(
         cs = pd.NamedAgg(column='totalCS10Minutes', aggfunc='mean')
     ).reset_index()
 
-    
-
-
 if hasattr(st.session_state, 'champion_info'):
     champion_info = st.session_state.champion_info
-    # len(set(lose_matchlist)) 
+
 
 
 if hasattr(st.session_state, 'log_df'):
     log_df = st.session_state.log_df
     log_df['timestamp'] = log_df['timestamp'].astype(int)
+
+
     ld = log_df[['matchId','timestamp','minionsKilled','participantId','position','totalGold','xp','level']]
     champion_info = champion_info[['matchId','participantId','teamId','teamPosition','summonerName','championName','win']]
     df1 = pd.merge(ld, champion_info, on=['matchId', 'participantId'], how='inner')
-    wak20CS= df1[(df1['summonerName'] == summoner_name)&(df1['timestamp'] < 21)]
+    summoner_20CS= df1[(df1['summonerName'] == summoner_name)&(df1['timestamp'] < 21)]
 
 
 if hasattr(st.session_state, 'match_ids'):
     match_ids = st.session_state.match_ids
 
-if hasattr(st.session_state, 'wakteam_death_log'):
-    wakteam_death_log = st.session_state.wakteam_death_log
-    
+
+if hasattr(st.session_state, 'team_death_log'):
+    team_death_log = st.session_state.team_death_log    
+    team_death_log.loc[:, 'lane'] = team_death_log.apply(lambda row: calculate_lane(row['position']['x'], row['position']['y']), axis=1)
 
     # 왁굳이 미드라인에서 패배한 경기만    
-    wakteam_lose_log = wakteam_death_log[wakteam_death_log['matchId'].isin(wak_middle_lose)]
+    summoner_lose_log = team_death_log[team_death_log['matchId'].isin(summoner_mid_lose)]
 
-    # 왁굳이 죽은 포지션
-    wakgood_death = wakteam_lose_log[(wakteam_lose_log['summonerName_x'] == summoner_name)&(wakteam_lose_log['timestamp'] > 15)]
+    # 미드라인에서 패배한 경기중, 후반부에 왁굳이 죽은 좌표
+    summoner_death_16 = summoner_lose_log[(summoner_lose_log['summonerName_x'] == summoner_name)&(summoner_lose_log['timestamp'] > 15)]
 
     # 패배한경기, 포지션별 죽은 횟수 집계
-    team_death_15 = wakteam_lose_log[wakteam_lose_log['timestamp'] < 16].groupby(['victimPosition']).agg(
+    team_death_15 = summoner_lose_log[summoner_lose_log['timestamp'] < 16].groupby(['victimPosition']).agg(
                     count = pd.NamedAgg(column = 'victimPosition', aggfunc='count')
                     ).reset_index().sort_values(by='count',ascending=True)
     
-    team_death_16 = wakteam_lose_log[wakteam_lose_log['timestamp'] > 15].groupby(['victimPosition']).agg(
+    team_death_16 = summoner_lose_log[summoner_lose_log['timestamp'] > 15].groupby(['victimPosition']).agg(
                     count = pd.NamedAgg(column = 'victimPosition', aggfunc='count')
                     ).reset_index().sort_values(by='count',ascending=True)
     
 
     # 왁굳이 패배한 경기중에서 솔로킬을 당한 경우
-    wakteam_death_solo = wakteam_lose_log[wakteam_lose_log['assistingParticipantIds'].isna()] # 다른 상대팀의 어시스트 없이 솔로킬을 당한 경우
+    summoner_death_solo = summoner_lose_log[summoner_lose_log['assistingParticipantIds'].isna()] # 다른 상대팀의 어시스트 없이 솔로킬을 당한 경우
 
-    death_solo_16 = wakteam_death_solo[wakteam_death_solo['timestamp'] > 15].groupby(['victimPosition']).agg(
+    # 15분 전후로 포지션별 집계
+    death_solo_16 = summoner_death_solo[summoner_death_solo['timestamp'] > 15].groupby(['victimPosition']).agg(
                     death = pd.NamedAgg(column = 'victimPosition', aggfunc='count')).reset_index().sort_values(by='death',ascending=True)
 
-    death_solo_15 = wakteam_death_solo[wakteam_death_solo['timestamp'] < 15].groupby(['victimPosition']).agg(
+    death_solo_15 = summoner_death_solo[summoner_death_solo['timestamp'] < 15].groupby(['victimPosition']).agg(
                     death = pd.NamedAgg(column = 'victimPosition', aggfunc='count')).reset_index().sort_values(by='death',ascending=True)
 
 
     # 라인전 이후 솔로킬로 짤린 포지션은 바텀(원딜) 이었다. 그렇다면 주로 어디서 짤리는가
-    bottom_solo_death = wakteam_death_solo[(wakteam_death_solo['victimPosition'] == 'BOTTOM') & (wakteam_death_solo['timestamp'] > 15)]
+    bottom_solo_death = summoner_death_solo[(summoner_death_solo['victimPosition'] == 'BOTTOM') & (summoner_death_solo['timestamp'] > 15)]
   
     # 라인전동안 적팀정글로 인한 데스 (+우리팀 정글은 어디서 죽었을까?)
-    jungle_death = wakteam_death_log[(wakteam_death_log['victimPosition'] == 'JUNGLE') | (wakteam_death_log['assistingParticipantIds'].apply(lambda x: 'JUNGLE' in x if isinstance(x, list) else False))]
+    jungle_death = team_death_log[(team_death_log['victimPosition'] == 'JUNGLE') | (team_death_log['assistingParticipantIds'].apply(lambda x: 'JUNGLE' in x if isinstance(x, list) else False))]
     jungle_death_15 = jungle_death[jungle_death['timestamp'] < 16]
+
+
 
 
     # to json
@@ -209,22 +227,66 @@ if hasattr(st.session_state, 'gold_df'):
     t3 = gold_df[gold_df['timestamp'] == 20].nsmallest(3, 'totalGold_diff')['teamPosition'].tolist()
 
     # to json
-    gold_15 = []
-    for team in gold_df['teamPosition'].unique():
-        team_data = {
-            'id': team,
-            'data': []
-        }
-
-        team_df = gold_df[gold_df['teamPosition'] == team]
-        for index, row in team_df.iterrows():
-            item = {
-                'x': row["timestamp"],
-                'y': row["totalGold_diff"]
+    @st.cache_data
+    def to_nivo_line(df,group,x_col,y_col):
+        nivo_line_data = []
+        for team in df[group].unique():
+            team_data = {
+                'id': team,
+                'data': []
             }
-            team_data["data"].append(item)
 
-        gold_15.append(team_data)
+            team_df = df[df[group] == team]
+            for index, row in team_df.iterrows():
+                item = {
+                    'x': row[x_col],
+                    'y': row[y_col]
+                }
+                team_data["data"].append(item)
+
+            nivo_line_data.append(team_data)
+        return nivo_line_data
+    
+    gold_15 = to_nivo_line(gold_df,'teamPosition','timestamp','totalGold_diff')
+
+
+if hasattr(st.session_state, 'lose_match_gold_by_team'):
+    lose_match_gold_by_team = st.session_state.lose_match_gold_by_team
+    team_by_gold = lose_match_gold_by_team[lose_match_gold_by_team['timestamp'] < 21]
+    team_by_gold = team_by_gold.groupby(['timestamp','teamId']).agg({'totalGold':'mean'}).round().reset_index()    
+    team_by_gold = to_nivo_line(team_by_gold,'teamId','timestamp','totalGold')
+
+
+if hasattr(st.session_state, 'all_kill_log'): # ward_log
+    all_kill_log = st.session_state.all_kill_log 
+    
+    ward_log = all_kill_log[(all_kill_log['type'].str.contains('WARD')) & (all_kill_log['wardType'] != 'UNDEFINED')]
+    
+    
+    ward_info = champion_info[['matchId','teamId','teamPosition','participantId','summonerName','win']]
+    ward_info.columns = ['matchId','teamId','teamPosition','creatorId','summonerName','win']
+    ward_log = pd.merge(ward_log, ward_info, on=['matchId','creatorId'],how='inner')
+
+
+
+    # 해당 소환사의 와드
+    wak_ward = ward_log[ward_log['summonerName'] == summoner_name]
+    wak_ward_static = wak_ward.groupby(['matchId','win']).agg(
+        ward_cnt = pd.NamedAgg(column='matchId', aggfunc='count')
+    )
+
+
+
+
+
+    # st.write(ward_log)
+    # st.write(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] > 15)].groupby(['matchId']).agg(
+    #             ward_cnt = pd.NamedAgg(column='matchId',aggfunc='count')).mean())
+    
+    # st.write(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] < 16)].groupby(['matchId']).agg(
+    #             ward_cnt = pd.NamedAgg(column='matchId',aggfunc='count')).mean())
+    
+    # st.write(len(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] < 16)]))
 
 
 # 흑백화면, 골드 통계
@@ -271,23 +333,15 @@ if hasattr(st.session_state, 'rank_data'):
 
 
 # 능력치 radar 차트
-if hasattr(st.session_state, 'wak_radar_data'):
-    wak_radar_data = st.session_state.wak_radar_data
-    # min_value_var = min(wak_radar_data, key=lambda x: x[f'{summoner_name}'])["var"]
+if hasattr(st.session_state, 'summoner_radar_data'):
+    summoner_radar_data = st.session_state.summoner_radar_data
+    # min_value_var = min(summoner_radar_data, key=lambda x: x[f'{summoner_name}'])["var"]
     
-
 
     def main():
         with st.container():
             st.header("🎮 누가 범인 인가!?")
             st.caption(''' " 아니 우리팀 뭐하냐 " 우왁굳이 패배한 이유, 도대체 누구 때문에 지는걸까, 궁금해서 데이터를 분석해보았습니다. ''')
-            st.markdown(f''' 
-                            <div>\n
-                            * 편차를 줄이기 위해 20분이상 진행된 경기만 분석했으며 총 {unique_match}경기 입니다. 
-                            * '{summoner_name}'님의 최근{unique_match}개의 경기중 <span style="color:orange">패배한 경기는 {lose_match_cnt} 경기</span>입니다. 
-                            * 그 중에서 왁굳님의 주포지션인 <span style="color:orange"> MIDDLE 포지션일때</span> {wak_middle_lose_cnt}번 졌으며, 이 기준으로 데이터가 집계되었습니다.                            
-                            </div> 
-                            ''', unsafe_allow_html=True)
 
 
             # MAIN - WAKGOOD
@@ -305,7 +359,7 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                         dashboard.Item("item_rank", 2, 1, 0.8, 1, isDraggable=False, isResizable=True ),
                                         dashboard.Item("item_tier", 2, 2, 0.8, 1, isDraggable=False, isResizable=True)
                                         ]
-                            card_sx = {"background-color":"#0a0a0adb","borderRadius": "20px", "outline": "1px solid #31323b"} # "outline": "1px solid #31323b"
+                            card_sx = {"background-color":"#0a0a0adb","borderRadius": "20px"} # "outline": "1px solid #31323b"
                             with dashboard.Grid(layout):
 
                                 mui.Card( # 티어,랭크
@@ -343,7 +397,18 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                                         "backgroundImage": f"url(http://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/4025.png)",  
                                                     },
                                                 ),
+                                             
                                                 mui.Divider(orientation="vertical",sx={"height": "100px"}), 
+                                             
+                                                mui.CardMedia(
+                                                    sx={
+                                                        "height": 80,
+                                                        "width": 80,
+                                                        "borderRadius": "10%",
+                                                        "backgroundImage": f"url(https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-{death_solo_16[4]['victimPosition'].lower()}.png)"
+                                                    }
+                                                ), 
+                                                mui.Divider(orientation="vertical",sx={"height": "100px"}),                                                
                                 
                                             ]
                                         ),                                 
@@ -351,7 +416,7 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                             mui.Divider(sx={"height": "1px"}), # orientation="vertical",
                                             
                                             nivo.Radar(
-                                                data=wak_radar_data,
+                                                data=summoner_radar_data,
                                                 keys=[f'{summoner_name}','상대라이너'],
                                                 colors={'scheme': 'nivo' },
                                                 indexBy="var",
@@ -398,7 +463,7 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                                 }
                                             ),
                                     ]
-                                    ,key="item_info",sx=card_sx)
+                                    ,key="item_info",sx=card_sx) 
             
                                 mui.Card( # RANK 승패
                                     children=[
@@ -473,7 +538,7 @@ if hasattr(st.session_state, 'wak_radar_data'):
 
                     expander = st.expander("(평균) 데이터")
                     with expander:
-                        st.write(wak_static)
+                        st.write(summoner_static)
 
                         st.markdown(f'''
                                 <div> \n
@@ -484,30 +549,35 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                 ''',unsafe_allow_html= True)
 
                             #  ✔️ 왁굳님의 가장 취약한 부분은 <strong>{min_value_var}</strong> 입니다. 
-                            #     * 현재 왁굳님의 평균 10분CS는 {int(wak_static[f'{min_value_var}'][0])}개 이며 
-                            #     * 상대 라이너의 평균 10분CS는 {int(wak_static[f'{min_value_var}'][1])}개 입니다.
+                            #     * 현재 왁굳님의 평균 10분CS는 {int(summoner_static[f'{min_value_var}'][0])}개 이며 
+                            #     * 상대 라이너의 평균 10분CS는 {int(summoner_static[f'{min_value_var}'][1])}개 입니다.
 
 
                 # Most Champ
                 with tab2:
                     summoner_match_info = match_info[(match_info['puuid'] == puuid)]
                     # 챔피언별 통계
-                    champ_static = summoner_match_info.groupby(['championName']).agg(
-                                            champion_count = pd.NamedAgg(column = 'championName', aggfunc='count'),
-                                            soloKills_sum = pd.NamedAgg(column = 'soloKills', aggfunc='sum'),
-                                            multiKills_sum = pd.NamedAgg(column = 'multikills', aggfunc='sum'),                                       
-                                            win_sum = pd.NamedAgg(column = 'win', aggfunc='sum'),
-                                            totalCS10Minutes_mean = pd.NamedAgg(column = 'totalCS10Minutes', aggfunc='mean'),
-                                            damagePerMinute_mean = pd.NamedAgg(column = 'damagePerMinute', aggfunc ='mean'), 
-                                            damageDealtToBuildings_mean = pd.NamedAgg(column = 'damageDealtToBuildings', aggfunc='mean'),
-                                            damageDealtToObjectives_mean = pd.NamedAgg(column = 'damageDealtToObjectives', aggfunc='mean'),
-                                            visionScore_mean = pd.NamedAgg(column='visionScore',aggfunc='mean'),
-                                            longestTimeSpentLiving = pd.NamedAgg(column = 'longestTimeSpentLiving', aggfunc='mean'), 
-                                            kda_mean = pd.NamedAgg(column='kda', aggfunc ='mean')                                          
+                    @st.cache_data
+                    def champ_static_func(df):
+                        champ_static = df.groupby(['championName']).agg(
+                                                champion_count = pd.NamedAgg(column = 'championName', aggfunc='count'),
+                                                soloKills_sum = pd.NamedAgg(column = 'soloKills', aggfunc='sum'),
+                                                multiKills_sum = pd.NamedAgg(column = 'multikills', aggfunc='sum'),                                       
+                                                win_sum = pd.NamedAgg(column = 'win', aggfunc='sum'),
+                                                totalCS10Minutes_mean = pd.NamedAgg(column = 'totalCS10Minutes', aggfunc='mean'),
+                                                damagePerMinute_mean = pd.NamedAgg(column = 'damagePerMinute', aggfunc ='mean'), 
+                                                damageDealtToBuildings_mean = pd.NamedAgg(column = 'damageDealtToBuildings', aggfunc='mean'),
+                                                damageDealtToObjectives_mean = pd.NamedAgg(column = 'damageDealtToObjectives', aggfunc='mean'),
+                                                visionScore_mean = pd.NamedAgg(column='visionScore',aggfunc='mean'),
+                                                longestTimeSpentLiving = pd.NamedAgg(column = 'longestTimeSpentLiving', aggfunc='mean'), 
+                                                kda_mean = pd.NamedAgg(column='kda', aggfunc ='mean')                                          
 
-                                            ).sort_values(by=['champion_count'], ascending=False).reset_index().round(2)
-                    
-                    champ_static['win_rate'] = round((champ_static['win_sum']/champ_static['champion_count']) * 100)
+                                                ).sort_values(by=['champion_count'], ascending=False).reset_index().round(2)
+                        
+                        champ_static['win_rate'] = round((champ_static['win_sum']/champ_static['champion_count']) * 100)
+
+                        return champ_static
+                    champ_static = champ_static_func(summoner_match_info)
 
                     first_champ = champ_static.iloc[0]['championName']
                     second_champ = champ_static.iloc[1]['championName']
@@ -648,15 +718,25 @@ if hasattr(st.session_state, 'wak_radar_data'):
 
             with col2: # 패배한경기 분석 (gold)
 
-                tab1,tab2,tab3,tab4 = st.tabs(['GOLD🪙','DEATH','DEATH II','DEATH III'])
+                tab0, tab1,tab2,tab3,tab4 = st.tabs(['패배한 경기','GOLD🪙','DEATH','DEATH II','DEATH III'])
+                with tab0:
+
+                    st.markdown(f''' 
+                                    <div>\n
+                                    ### 패배한 경기 집계 기준🫠
+                                    * 편차를 줄이기 위해 20분이상 진행된 경기만 분석했으며 총 {unique_match}경기 입니다. 
+                                    * '{summoner_name}'님의 최근{unique_match}개의 경기중 <span style="color:orange">패배한 경기는 {lose_match_cnt} 경기</span>입니다. 
+                                    * 그 중에서 왁굳님의 주포지션인 <span style="color:orange"> MIDDLE 포지션일때</span> {summoner_mid_lose_cnt}번 졌으며, 이 기준으로 데이터가 집계되었습니다.                            
+                                    </div> 
+                                    ''', unsafe_allow_html=True)
+
                 with tab1: # 골드
                     st.subheader(''' ✔️ (패배한 경기) 포지션별 골드차이(20분)''')
                     st.caption('첫번째 단서는 GOLD 입니다. 라인전 동안의 CS, KILL 을 통해 벌어진 상대 라이너와의 골드차이를 통해 누가 똥쌌는지 유추 할 수 있습니다.')
                     with elements("GOLD"):                
                             layout = [
-                                        dashboard.Item("item1", 0, 0, 4, 1,isDraggable=True, isResizable=True ),
-                                        dashboard.Item("item2", 0, 3, 5, 2,isDraggable=True, isResizable=True ),
-                                        dashboard.Item("item3", 6, 0, 1, 2,isDraggable=True, isResizable=True ),
+                                        dashboard.Item("item1", 0, 0, 6, 2,isDraggable=True, isResizable=True ),
+                                        dashboard.Item("item2", 0, 3, 6, 1,isDraggable=True, isResizable=True ),
 
                                         ]
                             card_sx = {"background-color":"#0a0a0adb","borderRadius": "23px", "outline": "1px solid #242427"}
@@ -746,11 +826,92 @@ if hasattr(st.session_state, 'wak_radar_data'):
 
                                         ]
                                     
-                                        ,key="item2",sx=card_sx) #sx=card_sx          
+                                        ,key="item1",sx=card_sx) #sx=card_sx          
                             
-                                mui.Card(
-                                        f'none'
-                                        ,key="item3") #sx=card_sx          
+                                # mui.Card(
+                                #     children=[                                
+                                #         nivo.Line(
+                                #             data= team_by_gold,
+                                #             margin={'top': 30, 'right': 60, 'bottom': 50, 'left': 80},
+                                #             xScale={'type': 'point'},
+                                #             yScale={
+                                #                 'type': 'linear',
+                                #                 'min': 'auto',
+                                #                 'max': 'auto',
+                                #                 # 'stacked': True,
+                                #                 'reverse': False
+                                #             },
+                                #             curve="cardinal",
+
+                                #             axisBottom={
+                                #                     'tickSize': 5,
+                                #                     'tickPadding': 3,
+                                #                     'tickRotation': 0,
+                                #                     'legend': 'miniute',
+                                #                     'legendOffset': 36,
+                                #                     'legendPosition': 'middle'
+                                #                 },
+
+                                #             axisLeft={
+                                #                 'tickSize': 2,
+                                #                 'tickPadding': 3,
+                                #                 'tickRotation': 0,
+                                #                 'legend': 'gold',
+                                #                 'legendOffset': -50,
+                                #                 'legendPosition': 'middle'
+                                #             },
+
+
+                                #             legends=[
+                                #                 {
+                                #                     "anchor": "bottom-left",
+                                #                     "direction": "column",
+                                #                     "translateX": 10,
+                                #                     "translateY": -10,
+                                #                     "itemWidth": 10,
+                                #                     "itemHeight": 15,
+                                #                     "itemTextColor": "white",
+                                #                     "symbolSize": 10,
+                                #                     "symbolShape": "circle",
+                                #                     "effects": [
+                                #                         {
+                                #                             "on": "hover",
+                                #                             "style": {
+                                #                                 "itemTextColor": "white",
+                                #                                 'itemBackground': 'rgba(0, 0, 0, .03)',
+                                #                                 'itemOpacity': 1
+                                #                             }
+                                #                         }
+                                #                     ]
+                                #                 }
+                                #             ],
+
+                                #             colors=  {'scheme': 'accent'},
+                                #             enableGridX = False,
+                                #             enableGridY = False,
+                                #             lineWidth=2,
+                                #             pointSize=3,
+                                #             pointColor='white',
+                                #             pointBorderWidth=1,
+                                #             pointBorderColor={'from': 'serieColor'},
+                                #             pointLabelYOffset=-12,
+                                #             enableArea=True,
+                                #             areaOpacity='0.2',
+                                #             useMesh=True,                
+                                #             theme={
+                                #                     "textColor": "white",
+                                #                     "tooltip": {
+                                #                         "container": {
+                                #                             "background": "#3a3c4a",
+                                #                             "color": "white",
+                                #                         }
+                                #                     }
+                                #                 },
+
+                                #             animate= False),
+
+                                #         ]
+                                #           ,key="item2") #sx=card_sx          
                     
                     
 
@@ -917,10 +1078,10 @@ if hasattr(st.session_state, 'wak_radar_data'):
 
                     with expander:
                         stat = lose_static()
-                        death_15 = wakteam_death_log[wakteam_death_log['timestamp'] < 16].groupby(['matchId','victimPosition']).agg(
+                        death_15 = team_death_log[team_death_log['timestamp'] < 16].groupby(['matchId','victimPosition']).agg(
                                         count = pd.NamedAgg(column = 'victimPosition', aggfunc='count')
                                         ).reset_index().sort_values(by='count',ascending=True)
-                        death_16 = wakteam_death_log[wakteam_death_log['timestamp'] > 15].groupby(['matchId','victimPosition']).agg(
+                        death_16 = team_death_log[team_death_log['timestamp'] > 15].groupby(['matchId','victimPosition']).agg(
                                         count = pd.NamedAgg(column = 'victimPosition', aggfunc='count')
                                         ).reset_index().sort_values(by='count',ascending=True)
 
@@ -1315,31 +1476,26 @@ if hasattr(st.session_state, 'wak_radar_data'):
                     #     with col3:
                     #         st.write('''##### ✔️ 흑백화면을 가장 오래본 포지션 ''')
 
-                    #         wakgood_death.loc[:, 'lane'] = wakgood_death.apply(lambda row: calculate_lane(row['position']['x'], row['position']['y']), axis=1)
-                    #         groupby_lane = wakgood_death.groupby(['lane']).agg(count = pd.NamedAgg(column='lane',aggfunc ='count')).reset_index()
+                            
+                    #         groupby_lane = summoner_death_16.groupby(['lane']).agg(count = pd.NamedAgg(column='lane',aggfunc ='count')).reset_index()
                     #         total_count = groupby_lane['count'].sum()
                     #         groupby_lane['ratio'] = (groupby_lane['count'] / total_count) * 100
 
                     #         groupby_lane = groupby_lane.sort_values(by=['ratio'],ascending=False)
 
-                    #         death_spot_sc(wakgood_death,'Reds')
+                    #         death_spot_sc(summoner_death_16,'Reds')
                     #         st.markdown('''
                     #                      <div> \n
-                    #                     * 왁굳님의 경우 상대적으로 후반부에 짤리는 경우가 특히 많았습니다.
-
+                    #                     * 패배한 경기에서 왁굳님의 경우 상대적으로 후반부에 짤리는 경우가 특히 많았습니다.
                     #                     </div>
                     #                     ''', unsafe_allow_html=True)
 
                     #         st.dataframe(groupby_lane)
 
-
-
-
-
                 with tab4:
                     st.subheader('☠️ 합류하는데 차이가 있을까?')
                     st.write(''' 
-                                * 가장 많이 일어난 정글지형에서 일어난 전투 비교 
+                                * 가장 많이 일어난 정글지형에서 일어난 전투 비교를 하려했지만 아직
                             ''')
                     
                     
@@ -1849,51 +2005,65 @@ if hasattr(st.session_state, 'wak_radar_data'):
 # ------------------------------------------------------------- 소환사 성장 지표 ---------------------------------------------------------------------------#
         st.divider()
 
-        # wak_df = match_info[match_info['puuid'] == puuid]['matchId'].unique()
-        # st.write(len(wak_df))
 
         with st.container():
+            
             st.header('📈 오늘의 나는.. 어제의 나와 다르다.')
             st.caption('''
                        * 최근 25경기와 과거 25경기, 그리고 언젠가 매치에서 만날 페이커님과 비교해보았어요
-                       * 페이커님의 경우 최근 34경기의 (미드포지션) 기준이기 때문에 비교가 무의미할 수 있습니다. (*2024-01-26 기준 데이터)
+                       * 페이커님의 경우 이번 시즌 34경기의 (미드포지션) 기준이기 때문에 비교가 무의미할 수 있습니다. (*2024-01-26 기준 데이터)
                        ''')
 
             col1,col2 = st.columns([2,1])
             with col1:
                 @st.cache_data
-                def wak_indicator(match_info,summoner_name):
-                    wak = match_info[match_info['summonerName'] == summoner_name]
-                    wak['totalTimeSpentDead'] = wak['totalTimeSpentDead'] / 60 
+                def summoner_indicator(summoner_match_info, ward_log, summoner_name):
                     
-                    wak_recent = wak.head(25) # 최근 25경기
-                    wak_befor = wak.tail(25)
+                    summoner_match_info['totalTimeSpentDead'] = summoner_match_info['totalTimeSpentDead']/60
+                    summoner_recent = summoner_match_info.head(20) # 최근 20경기
+                    summoner_befor = summoner_match_info.tail(20)
 
-                    recent_matchid= wak_recent['matchId'].tolist()
-                    befor_matchid= wak_befor['matchId'].tolist()
+                    recent_matchid= summoner_recent['matchId'].tolist()
+                    befor_matchid= summoner_befor['matchId'].tolist()
+
+                    # ward 데이터의 경우 최근 27개의 경기의 데이터만 남아있다.. 아무래도 이전 시즌 데이터는 날라건둣함
+
+                    ids = wak_ward['matchId'].unique().tolist()
+                    middle_index = len(ids) // 2
+
+                    ward_recent = ward_log[(ward_log['matchId'].isin(match_ids[:middle_index])) & (ward_log['summonerName']==summoner_name)].groupby('matchId').size().mean().round(1)
+                    ward_befor  = ward_log[ward_log['matchId'].isin(match_ids[middle_index:]) & (ward_log['summonerName']==summoner_name)].groupby('matchId').size().mean().round(1)
+
 
                     # 기본지표
                     indicators = ['totalCS10Minutes','totalTimeSpentDead','visionScore','wardTakedowns','controlWardsPlaced','soloKills','kda','totalDamageDealtToChampions','damageDealtToObjectives','multikills']
                     kr_col = ['10분CS','죽은시간','시야점수','와드제거','제어와드설치','솔로킬','kda','챔피언딜량','오브젝트','멀티킬']
 
-                    wak_recent_static = wak_recent[indicators]
-                    wak_recent_static.columns = kr_col            
-                    wak_recent_static = wak_recent_static.mean().rename('현재의 나')
+                    summoner_recent_static = summoner_recent[indicators]
+                    summoner_recent_static.columns = kr_col            
+                    summoner_recent_static = summoner_recent_static.mean().rename('현재의 나')
 
 
-                    wak_befor_static = wak_befor[indicators]
-                    wak_befor_static.columns = kr_col            
-                    wak_befor_static = wak_befor_static.mean().rename('과거의 나')
+                    summoner_befor_static = summoner_befor[indicators]
+                    summoner_befor_static.columns = kr_col            
+                    summoner_befor_static = summoner_befor_static.mean().rename('과거의 나')
 
                                 
-                    result = pd.concat([wak_recent_static, wak_befor_static], keys=['현재의 나', '과거의 나'], axis=1).reset_index().rename(columns={'index': 'col'})
+                    result = pd.concat([summoner_recent_static, summoner_befor_static], keys=['현재의 나', '과거의 나'], axis=1).reset_index().rename(columns={'index': 'col'})
                     result['현재의 나'] = result['현재의 나'].round(2)
                     result['과거의 나'] = result['과거의 나'].round(2)
 
+                    # Create a new DataFrame for the additional row
+                    additional_row = pd.DataFrame({'col': ['와드 설치'], '과거의 나': [ward_befor], '현재의 나': [ward_recent]})
+
+                    # Concatenate existing DataFrame with the additional row
+                    result = pd.concat([result, additional_row], ignore_index=True)
+
                     return result,recent_matchid,befor_matchid
 
-                result,recent_matchid,befor_matchid = wak_indicator(match_info,summoner_name)
+                result,recent_matchid,befor_matchid = summoner_indicator(summoner_match_info,ward_log,summoner_name)
 
+                
 
                 @st.cache_data
                 def get_death_stats(data, match_ids, summoner_name, timestamp_threshold=16, solo_death=False, jungle_death=False):
@@ -1910,20 +2080,20 @@ if hasattr(st.session_state, 'wak_radar_data'):
 
 
                 # 솔로데스
-                wak_solo_death_before = get_death_stats(wakteam_death_log, befor_matchid, '메시아빠우왁굳', solo_death=True)
-                wak_solo_death_recent = get_death_stats(wakteam_death_log, recent_matchid, '메시아빠우왁굳', solo_death=True)
+                # wak_solo_death_before = get_death_stats(team_death_log, befor_matchid, '메시아빠우왁굳', solo_death=True)
+                # wak_solo_death_recent = get_death_stats(team_death_log, recent_matchid, '메시아빠우왁굳', solo_death=True)
                 
 
                 # 15분 이전 킬을 당하는 횟수 집계
-                wak_death_before = get_death_stats(wakteam_death_log, befor_matchid, '메시아빠우왁굳')
-                wak_death_recent = get_death_stats(wakteam_death_log, recent_matchid, '메시아빠우왁굳')
+                # wak_death_before = get_death_stats(team_death_log, befor_matchid, '메시아빠우왁굳')
+                # wak_death_recent = get_death_stats(team_death_log, recent_matchid, '메시아빠우왁굳')
 
                 # 15분 이전 정글갱에 의한 데스
-                wak_jungle_death_before = get_death_stats(wakteam_death_log, befor_matchid, '메시아빠우왁굳', jungle_death=True)
-                wak_jungle_death_recent = get_death_stats(wakteam_death_log, recent_matchid, '메시아빠우왁굳', jungle_death=True)
+                # wak_jungle_death_before = get_death_stats(team_death_log, befor_matchid, '메시아빠우왁굳', jungle_death=True)
+                # wak_jungle_death_recent = get_death_stats(team_death_log, recent_matchid, '메시아빠우왁굳', jungle_death=True)
 
-                new_row = pd.DataFrame({'col': ['death_15'], '과거의 나': [wak_death_before], '현재의 나': [wak_death_recent],
-                                        })
+                # new_row = pd.DataFrame({'col': ['death_15'], '과거의 나': [wak_death_before], '현재의 나': [wak_death_recent],
+                #                         })
 
                 # faker 데이터
                 data_values = [81.82, 2.1, 28.65, 5.65, 3.44, 1.68, 4.39, 29217.24, 11825.41, 0.85]
@@ -1933,28 +2103,24 @@ if hasattr(st.session_state, 'wak_radar_data'):
                 # wak_data = pd.concat([wak_data, new_row])
 
 
-
-                vision_value = ["제어와드설치", "와드제거","시야점수"]    
+                vision_value = ["제어와드설치", "와드 설치", "와드제거","시야점수"]    
                 attack_value = ["솔로킬","멀티킬" ,"kda","죽은시간"] 
                 deatl_value = ["챔피언딜량","오브젝트"]
                 gold_value = ["10분CS"]
 
-                vision = wak_data[wak_data['col'].isin(vision_value)]
-                attack = wak_data[wak_data['col'].isin(attack_value)]
-                dealt = wak_data[wak_data['col'].isin(deatl_value)]
-                gold = wak_data[wak_data['col'].isin(gold_value)]
-
                 # to json
-                nivo_bar_vision = vision.to_dict('records')
-                nivo_bar_attack = attack.to_dict('records')
-                nivo_bar_dealt = dealt.to_dict('records')
-                nivo_bar_gold = gold.to_dict('records')
+                nivo_bar_vision = wak_data[wak_data['col'].isin(vision_value)].to_dict('records')
+                nivo_bar_attack = wak_data[wak_data['col'].isin(attack_value)].to_dict('records')
+                nivo_bar_dealt = wak_data[wak_data['col'].isin(deatl_value)].to_dict('records')
+                nivo_bar_gold = wak_data[wak_data['col'].isin(gold_value)].to_dict('records')
 
 
-                # 
+
+
+                # 최근 경기의 시야점수 
                 iron_vision = round(match_info['controlWardsPlaced'].mean(),1)
 
-
+                # 공격지표에 관하여
                 with elements("wak_indicator_attack"):                
                     layout = [
                                 dashboard.Item("item1", 0, 0, 6, 2,isDraggable=True, isResizable=True ),
@@ -1963,7 +2129,8 @@ if hasattr(st.session_state, 'wak_radar_data'):
                     with dashboard.Grid(layout):
                         st.subheader('''📊 공격지표''')
                         st.markdown(''' ##### " 날카롭게 성장중인 슬로우 스타터 " ''')
-                        mui.Card(
+                      
+                        mui.Card( #공격지표 chart
                             nivo.Bar(
                                 data=nivo_bar_attack,
                                 keys=["faker","현재의 나","과거의 나"],  # 막대 그래프의 그룹을 구분하는 속성
@@ -2003,7 +2170,7 @@ if hasattr(st.session_state, 'wak_radar_data'):
                             
                             nivo.Bar(
                             data=nivo_bar_dealt,
-                            keys=["faker","현재의 나","과거의 나"],  # 막대 그래프의 그룹을 구분하는 속성
+                            keys=["faker","현재의 나","과거의 나"],  # 막대 그래프의 그룹을 구분
                             indexBy="col",  # x축에 표시할 속성
 
                             margin={"top": 10, "right": 50, "bottom": 10, "left": 90},
@@ -2063,37 +2230,54 @@ if hasattr(st.session_state, 'wak_radar_data'):
                         ,key='item1',sx={'display':'flex',"background-color":"#0a0a0adb","borderRadius": "20px", "outline": "1px solid #31323b"})
 
 
-                st.markdown('''                                
+                death_per= round((nivo_bar_attack[0]['과거의 나'] - nivo_bar_attack[0]['현재의 나']))
+            
+                st.write( death_per)
+                st.markdown(f'''                                
                                 * 가끔 답답한 모습들이 보여지긴 하지만, :orange[놀랍게도 거의 모든 지표가 성장하고 있는] 슬로우 스타터 "Fe이커" 우왁굳의 모습을 볼 수 있었습니다. 
                                 * 준수한 'KDA' + 의외로 자주 등장하는 '멀티킬(더블킬 이상)'
-                                * 특히, 흑백화면을 보는 시간(death)이 줄어들고, 우왁굳의 안정적인 공격 모먼트가 과거에 비해 자주 나오는것을 볼 수 있습니다.                                                                       
+                                * 특히, 흑백화면을 보는 시간(death)이 :orange[{death_per}분 감소]함으로서, 우왁굳의 안정적인 공격 모먼트가 과거에 비해 자주 나오는것을 볼 수 있습니다.                                                                       
                             ''')
 
 
-            with col2:
-                st.subheader('🤡 요즘 폼이 좋은 챔피언 (3판이상)')
+            with col2: # hot champion
+                st.subheader('🤡 폼이 안정적인 챔피언 (3판이상)')
                 st.caption('''
                            * 공격지표, 시간대비 챔피언 딜량, CS, 타워피해량 등을 표준화해서 점수 산출.
                            ''')
                 
-                # 3판이상 진행한 챔피언... 
+                # 3판이상 진행한 챔피언
+                # recent_champ = champ_static_func(summoner_match_info.head(60))
                 df = champ_static[champ_static['champion_count']>2][['championName','soloKills_sum','multiKills_sum','visionScore_mean', 'longestTimeSpentLiving',
                                                                      'totalCS10Minutes_mean','damagePerMinute_mean','damageDealtToBuildings_mean',
                                                                      'damageDealtToObjectives_mean','kda_mean','win_rate']]
-
+                # 점수 표준화
                 scaler = MinMaxScaler()
                 scaled_values = scaler.fit_transform(df.iloc[:, 1:])
                 scaled_df = pd.DataFrame(scaled_values, columns=df.columns[1:])
                 scaled_df['sum_scaled'] = round(scaled_df.sum(axis=1),2)
                 scaled_df.insert(0, 'championName', df['championName'])  # 'name' 열 추가
-
-                hot_champ = scaled_df[scaled_df['sum_scaled'] == scaled_df['sum_scaled'].max()]['championName'].iloc[0]
+        
+                # 소환사의 hot champ
+                hot_champ = scaled_df.sort_values(by='sum_scaled',ascending=False)['championName'].iloc[0]
                 hot_champ_score = scaled_df[scaled_df['championName'] == hot_champ ]['sum_scaled'].iloc[0]
 
+
+                # hot champ vs most champ 비교
+                radar_df = scaled_df[['championName','totalCS10Minutes_mean','damagePerMinute_mean','longestTimeSpentLiving','damageDealtToObjectives_mean','kda_mean','visionScore_mean']]
+                radar_df.columns=['championName','10분CS','분당데미지','생존시간','오브젝트','KDA','시야점수']
+
+                # radar 차트를 위한 데이터 형식
+                melted_df = pd.melt(radar_df, id_vars=["championName"], var_name="var", value_name="value")
+                pivoted_df = melted_df.pivot(index="var", columns="championName", values="value").reset_index()
+                radar_champ = pivoted_df.to_dict("records")
+
+
+                # HOT CHAMPION
                 with elements("hot_champ"):                
                     layout = [
-                                dashboard.Item("champ1", 0, 0, 1, 3,isDraggable=True, isResizable=True ),
-
+                                dashboard.Item("hot_champ1", 0, 0, 0.8, 2,isDraggable=True, isResizable=True ),
+                                dashboard.Item("hot_champ2", 2, 0, 1.2, 2,isDraggable=True, isResizable=True ),
                                 ]
                     
                     with dashboard.Grid(layout):
@@ -2106,12 +2290,13 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                             "backgroundPosition": "bottom",
                                         }
                                     ),
+                                
                                 mui.CardContent(
                                     sx={'padding':2}, # 설명
                                     children=[  
                                         mui.Typography(
                                             f" {hot_champ} ",
-                                            variant="h5",
+                                            variant="h4",
                                             component="div"
                                         ),
                                         mui.Typography(
@@ -2123,7 +2308,6 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                             
                                         )]
                                     ),
-
 
                                 mui.Box( 
                                     sx={
@@ -2139,16 +2323,15 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                                 "flexDirection": "column",
                                                 "alignItems": "center",
                                             },
-                                            children=[
-    
+                                            children=[    
                                                 mui.Typography(
                                                     f'SCORE',
-                                                    variant='h5',
+                                                    variant='h6',
                                                 ), 
                                                 
                                                 mui.Typography(
                                                     f'{hot_champ_score}/10',
-                                                    variant='h3',
+                                                    variant='h4',
                                                 )
                                             ]
                                         ),
@@ -2156,16 +2339,84 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                     ]
                                 ),
 
-                            ] , key="mostchamp", elevation=1 , sx=card_sx) 
-            
+                            ]  
+                            , key="hot_champ1", elevation=0 , sx=card_sx) 
 
+                        mui.Box(# hot_champ_info
+                                mui.CardContent(
+                                        sx={'padding':2}, # 설명
+                                        children=[  
+                                            mui.Typography(
+                                                f" {hot_champ} VS ",
+                                                variant="h6",
+                                            ),
+                                            mui.Typography(
+                                                    "MOST 챔피언과 비교 ",
+                                                variant="body2",
+                                                color="text.secondary",
+                                                sx={ "font-size": "12px"},
+                                                
+                                            )]
+                                        ),  
+                                        
+                                nivo.Radar(
+                                        data=radar_champ,
+                                        keys=[f'{hot_champ}','Zed','Azir'],
+                                        colors={'scheme': 'accent' },
+                                        indexBy="var",
+                                        valueFormat=">-.2f",
+                                        maxValue={1.0},
+                                        margin={ "top": 50, "right": 60, "bottom": 110, "left": 60 },
+                                        borderColor={ "from": "color" },
+                                        gridShape="linear",
+                                        gridLevels={3},
+                                        gridLabelOffset=15,
+                                        dotSize=5,
+                                        dotColor={ "theme": "background" },
+                                        dotBorderWidth=1,
+                                        motionConfig="wobbly",
+                                        legends=[
+                                            {
+                                                "anchor": "top-right",
+                                                "direction": "column",
+                                                "translateX": -20,
+                                                "translateY": -50,
+                                                "itemWidth": 100,
+                                                "itemHeight": 20,
+                                                "itemTextColor": "white",
+                                                "symbolSize": 10,
+                                                "symbolShape": "circle",
+                                                "effects": [
+                                                    {
+                                                        "on": "hover",
+                                                        "style": {
+                                                            "itemTextColor": "white"
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ],
+                                        theme={
+                                            "textColor": "white",
+                                            "tooltip": {
+                                                "container": {
+                                                    "background": "#262730",
+                                                    "color": "white",
+                                                }
+                                            }
+                                        }
+                                    )                                
+                                        ,key='hot_champ2',sx=card_sx)
 
-                # st.dataframe(scaled_df)
+                expander = st.expander("(3판 이상)챔피언 데이터")
+                with expander:
+                    st.dataframe(df)
 
 
 
         st.divider()
-        with st.container() :
+
+        with st.container() : # 사야점수에 관하여
             col1,col2 = st.columns([2,1])
             with col1:
                 with elements("wak_indicator_vision"):                
@@ -2179,6 +2430,7 @@ if hasattr(st.session_state, 'wak_radar_data'):
                         st.markdown('''
                                     ##### " 남은돈으로 핑크와드를 사보자 "
                                     ''')
+                        # st.image('https://ddragon.leagueoflegends.com/cdn/14.1.1/img/item/2055.png')
 
                         mui.Card(
                             nivo.Bar(
@@ -2251,11 +2503,90 @@ if hasattr(st.session_state, 'wak_radar_data'):
                             ''', unsafe_allow_html=False)
 
             with col2:
-                st.subheader('🤡 시야')
-                st.caption('시야가 부족한곳에서 죽은 경우 좌표')
+                st.subheader('🤡 맵리딩')
+
+                wak_all_death = team_death_log[team_death_log['summonerName_x'] == summoner_name]
+                wak_15_death = wak_all_death[wak_all_death['timestamp'] <= 15]             
+
+                wak_death_gang = wak_15_death[(wak_15_death['killerId'] == 'JUNGLE') | (wak_15_death['assistingParticipantIds'].apply(lambda x: ('JUNGLE' in x) or ('TOP' in x) or('MIDDLE' in x) if isinstance(x, list) else False))]
+                wak_death_gang = wak_death_gang[['matchId','timestamp','type','wardType','position','assistingParticipantIds','summonerName_x','victimPosition','killerPosition','lane']]
+
+                # 소환사가 갱에 의해 죽은것으로 추정되는 좌표 (라인전)
+                ids = wak_death_gang['matchId'].unique().tolist()
+                result = ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['matchId'].isin(ids)) & (ward_log['timestamp'] <= 15)]                
+                ward_gang = pd.concat([wak_death_gang,result], axis = 0).sort_values(by=['matchId','timestamp'],ascending=[True,True])
+
+                mid_gang_cnt = len(wak_death_gang[wak_death_gang['lane'] == 'MIDDLE'])
+
+
+                @st.cache_data
+                def death_before_ward(ward_gang):
+                    results = []
+                    # 각 matchId에 대해 처리
+                    for match_id, group in ward_gang.groupby('matchId'):
+                        # "CHAMPION_KILL"을 당한 행 찾기
+                        champion_kill_rows = group[group['type'] == 'CHAMPION_KILL']
+
+                        for _, row in champion_kill_rows.iterrows():
+                            # 현재 행의 150초 전 timestamp 계산
+                            timestamp_before_champion_kill = row['timestamp'] - 2.5
+
+                            # 150초 전부터 현재까지의 행 중 "WARD_PLACED" 찾기
+                            relevant_rows = group[(group['timestamp'] >= timestamp_before_champion_kill) & (group['timestamp'] <= row['timestamp'])]
+                            
+                            # "WARD_PLACED" 여부 확인
+                            ward_placed = any(relevant_rows['type'] == 'WARD_PLACED')
+
+                            lane = row['lane']
+                            # 결과를 리스트에 추가
+                            results.append({
+                                'matchId': match_id,
+                                'timestamp': row['timestamp'],
+                                'ward_placed': ward_placed,
+                                'lane': lane
+                            })
+
+                    result_df = pd.DataFrame(results)
+
+                    return result_df
+
+                
+                warding_death = death_before_ward(ward_gang)
+                no_warding = warding_death[warding_death['ward_placed']== False]
+                # st.write(wak_death_gang)
+
+                # 소환사가 라인전때 갱에의해 잘죽는 시간대
+
+                # 시간대 별로 groupby하여 빈도 계산
+                time_grouped_1 = wak_15_death.groupby(wak_15_death['timestamp'].round()).size().rename('TOTAL DEATH(라인전)')
+                time_grouped_2 = wak_death_gang.groupby(wak_death_gang['timestamp'].round()).size().rename('GANG')
+                time_grouped_3 = no_warding.groupby(no_warding['timestamp'].round()).size().rename('NO WADING DEATH')
+                gang_line_chart = pd.concat([time_grouped_3,time_grouped_2,time_grouped_1], axis= 1).fillna(0)
+
+
+                tab1,tab2 = st.tabs(['GANG','DEATH 좌표'])
+                with tab1:
+                    st.bar_chart(gang_line_chart,color=['#fdc086','#459ae5','#ada9a9eb']) #fdc086  #colors=['#459ae5','#a1d99b', '#ada9a9eb'],                   
+                    st.write(f'''
+                             <div> \n
+                            * 라인전 동안 전체 데스는? {len(wak_15_death)}번
+                            * 그 중 <span style="color:#fdc086"> "GANG"에 의해 죽은것</span>으로 판단되는 데스는? {len(wak_death_gang)}번
+                            * 그 중 <span style="color:#459ae5">와드가 사라지거나, 와드를 설치하지 않아 </span> 죽은 경우는? {len(no_warding)}번                                                      
+                            </div>
+                            ''',unsafe_allow_html= True)
+
+                with tab2:
+                    # st.write(warding_death[warding_death['ward_placed']== False])
+                    death_spot(wak_death_gang)        
 
 
 
+
+                    # st.write(wak_death_gang[['timestamp','type']])
+                    # st.dataframe(wak_15_death)
+                    # death_spot(wak_death_jungle)
+
+        st.divider()
         with st.container(): # CS지표
             col1,col2 = st.columns([2,1])
             with col1: 
@@ -2266,7 +2597,7 @@ if hasattr(st.session_state, 'wak_radar_data'):
                                 ]
                     
                     with dashboard.Grid(layout):
-                        st.markdown('''#### 📊 GOLD''')
+                        st.subheader(''' 📊 GOLD''')
                         st.markdown('''
                                     ##### " 비건에서 육식으로.. "
                                     ''')
@@ -2343,18 +2674,24 @@ if hasattr(st.session_state, 'wak_radar_data'):
 
             with col2:  # 포지션별 20분간 CS              
                 st.subheader('📊포지션별 20분간 CS')
-                st.caption(f'{summoner_name}님은 바텀 포지션을 갔을 때 CS를 상대적으로 잘먹는 편입니다.')
-                CSbyPosition= wak20CS.groupby(['timestamp','teamPosition']).agg(
+                st.caption(f'큰 차이는 없지만 바텀 포지션을 갔을 때 CS를 상대적으로 잘먹는 편입니다.')
+                CSbyPosition= summoner_20CS.groupby(['timestamp','teamPosition']).agg(
                     CS = pd.NamedAgg(column='minionsKilled', aggfunc='mean')
                 ).reset_index()
 
                 CSbyPosition['CS'] = CSbyPosition['CS'].astype(int)
                 pivot_type = pd.pivot_table(CSbyPosition, values='CS', index='timestamp', columns='teamPosition')
                 st.line_chart(pivot_type, use_container_width=True)
-
+                
+                
+                # df['cs_rnk'] = df['totalCS10Minutes_mean'].rank(ascending=False)
+                # st.write(df)
+                # st.write(f'''* 10분CS가 가장 좋은 챔피언은 {df[df['cs_rnk']==1]['championName'].iloc[0]}  ''')
+                
+                
 
             #     st.subheader(''' ✔️ 15분 이후 솔로킬을 당한 좌표 ''')
-                # wak_total_death = wakteam_death_log[wakteam_death_log['summonerName_x']==summoner_name]             
+                # wak_total_death = team_death_log[team_death_log['summonerName_x']==summoner_name]             
                 # wak_total_death = wak_total_death[(wak_total_death['assistingParticipantIds'].isna()) & (wak_total_death['timestamp'] > 15)] 
                 # st.write(wak_total_death)
                 # death_spot(wak_total_death)
