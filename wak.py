@@ -276,15 +276,6 @@ if hasattr(st.session_state, 'gold_df'):
     gold_15 = to_nivo_line(gold_df,'teamPosition','timestamp','totalGold_diff')
 
 
-# if hasattr(st.session_state, 'lose_match_gold_by_team'):
-#     lose_match_gold_by_team = st.session_state.lose_match_gold_by_team
-    # team_by_gold = lose_match_gold_by_team[lose_match_gold_by_team['timestamp'] < 21]
-
-
-    # team_by_gold = team_by_gold.groupby(['timestamp','teamId']).agg({'totalGold':'mean'}).round().reset_index() #.sort_values(by=['timestamp','teamId'], ascending=[True,True])
-    # team_by_gold['gold_diff'] = team_by_gold.groupby('timestamp')['totalGold'].diff() # .fillna(0).astype(int)
-    # team_by_gold['gold_diff'] = team_by_gold['gold_diff'].fillna(-team_by_gold['gold_diff'].shift(-1))
-    # team_by_gold = to_nivo_line(team_by_gold[team_by_gold['teamId'] == '우리팀'],'teamId','timestamp','gold_diff')
 
 
 if hasattr(st.session_state, 'kill_and_ward'): # ward_log
@@ -296,25 +287,6 @@ if hasattr(st.session_state, 'kill_and_ward'): # ward_log
     ward_log = pd.merge(ward_log, ward_info, on=['matchId','creatorId'],how='inner')
 
 
-
-    # 해당 소환사의 와드
-    summoner_ward_log = ward_log[ward_log['summonerName'] == summoner_name]
-    summoner_ward_log['timestamp'] = summoner_ward_log['timestamp'].astype(int)
-    summoner_ward_log_static = summoner_ward_log.groupby(['matchId','win']).agg(
-        ward_cnt = pd.NamedAgg(column='matchId', aggfunc='count')
-    )
-
-    summoner_ward_log_15 = summoner_ward_log[summoner_ward_log['timestamp'] < 16]
-    # summoner_ward_log_15 = summoner_ward_log_15.groupby(['timestamp']).size().rename('ward_placed').reset_index()
-    # avg_ward = summoner_ward_log_15.groupby('timestamp')['creat'].mean()
-
-    # st.write(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] > 15)].groupby(['matchId']).agg(
-    #             ward_cnt = pd.NamedAgg(column='matchId',aggfunc='count')).mean())
-    
-    # st.write(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] < 16)].groupby(['matchId']).agg(
-    #             ward_cnt = pd.NamedAgg(column='matchId',aggfunc='count')).mean())
-    
-    # st.write(len(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] < 16)]))
 
 
 # 흑백화면, 골드 통계
@@ -888,79 +860,9 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                         # ]
                                     
                                         key="item1",sx=card_sx) #sx=card_sx          
-                            
-                                # mui.Box(
-                                #     children=[                                
-                                #         nivo.Line(
-                                #             data= team_by_gold,
-                                #             margin={'top': 5, 'right': 60, 'bottom': 30, 'left': 0},
-                                #             xScale={'type': 'point'},
-                                #             yScale={
-                                #                 'type': 'linear',
-                                #                 'min': 'auto',
-                                #                 'max': 'auto',
-                                #                 # 'stacked': True,
-                                #                 # 'reverse': False
-                                #             },
-                                #             curve="cardinal",
-
-                                #             axisBottom= None,
-
-                                #             axisLeft=None,
-
-
-                                #             legends=[
-                                #                 {
-                                #                     "anchor": "bottom-left",
-                                #                     "direction": "column",
-                                #                     "translateX": 10,
-                                #                     "translateY": -10,
-                                #                     "itemWidth": 10,
-                                #                     "itemHeight": 15,
-                                #                     "itemTextColor": "white",
-                                #                     "symbolSize": 10,
-                                #                     "symbolShape": "circle",
-                                #                     "effects": [
-                                #                         {
-                                #                             "on": "hover",
-                                #                             "style": {
-                                #                                 "itemTextColor": "white",
-                                #                                 'itemBackground': 'rgba(0, 0, 0, .03)',
-                                #                                 'itemOpacity': 1
-                                #                             }
-                                #                         }
-                                #                     ]
-                                #                 }
-                                #             ],
-
-                                #             colors= {'scheme': 'red_yellow_blue'},
-                                #             enableGridX = False,
-                                #             enableGridY = False,
-                                #             lineWidth=3,
-                                #             pointSize=0,
-                                #             pointColor='white',
-                                #             pointBorderWidth=1,
-                                #             pointBorderColor={'from': 'serieColor'},
-                                #             pointLabelYOffset=-12,
-                                #             enableArea=True,
-                                #             areaOpacity='0.2',
-                                #             useMesh=True,                
-                                #             theme={
-                                #                     "textColor": "white",
-                                #                     "tooltip": {
-                                #                         "container": {
-                                #                             "background": "#3a3c4a",
-                                #                             "color": "white",
-                                #                         }
-                                #                     }
-                                #                 },
-
-                                #             animate= False),
-
-                                #         ]
-                                #           ,key="item2",sx=card_sx ) #sx=card_sx          
+                               
                     
-                    
+                  
 
                     st.markdown(f'''
                                 <div> \n
@@ -1498,50 +1400,50 @@ if hasattr(st.session_state, 'summoner_radar_data'):
     
 
 
-                    # expander = st.expander("주로 어디서 죽었나?")
-                    # with expander:
-                    #     col1,col2,col3 =st.columns([1,1,1])
-                    #     with col1:
-                    #         st.write('''##### ✔️ 솔로킬을 당한 위치 (원딜) ''')
-                    #         death_spot(bottom_solo_death)
+                    expander = st.expander("주로 어디서 죽었나?")
+                    with expander:
+                        col1,col2,col3 =st.columns([1,1,1])
+                        with col1:
+                            st.write('''##### ✔️ 솔로킬을 당한 위치 (원딜) ''')
+                            death_spot(bottom_solo_death)
 
-                    #         st.markdown('''
-                    #                     <div> \n                            
-                    #                      * 라인전이후 가장 많이 솔로킬로 짤린 포지션은 <span style="color:#82b1ff">BOTTOM</span>.
-                    #                      *                                         
-                    #                     </div>
+                            st.markdown('''
+                                        <div> \n                            
+                                         * 라인전이후 가장 많이 솔로킬로 짤린 포지션은 <span style="color:#82b1ff">BOTTOM</span>.
+                                         *                                         
+                                        </div>
                                         
-                    #                     ''' ,unsafe_allow_html=True)
+                                        ''' ,unsafe_allow_html=True)
 
-                    #     with col2:
-                    #         st.write('''##### ✔️ 정글에 의한 죽음 ''' )
-                    #         death_spot_sc(jungle_death_15,'Greens')
+                        with col2:
+                            st.write('''##### ✔️ 정글에 의한 죽음 ''' )
+                            death_spot_sc(jungle_death_15,'Greens')
  
-                    #         st.markdown(''' 
-                    #                     <div> \n
-                    #                     * 라인전동안 가장 많이 정글에게 당한 포지션은  <span style="color:#74c476">JUNGLE</span>. 
-                    #                     * 특히, <span style="color:#74c476"> 바텀에서의 역갱, 정글링 싸움</span>으로 인한 death가 가장 많았습니다.
-                    #                     </div>
-                    #                     ''', unsafe_allow_html = True)
-                    #     with col3:
-                    #         st.write('''##### ✔️ 흑백화면을 가장 오래본 포지션 ''')
+                            st.markdown(''' 
+                                        <div> \n
+                                        * 라인전동안 가장 많이 정글에게 당한 포지션은  <span style="color:#74c476">JUNGLE</span>. 
+                                        * 특히, <span style="color:#74c476"> 바텀에서의 역갱, 정글링 싸움</span>으로 인한 death가 가장 많았습니다.
+                                        </div>
+                                        ''', unsafe_allow_html = True)
+                        with col3:
+                            st.write('''##### ✔️ 흑백화면을 가장 오래본 포지션 ''')
 
                             
-                    #         groupby_lane = summoner_death_16.groupby(['lane']).agg(count = pd.NamedAgg(column='lane',aggfunc ='count')).reset_index()
-                    #         total_count = groupby_lane['count'].sum()
-                    #         groupby_lane['ratio'] = (groupby_lane['count'] / total_count) * 100
+                            groupby_lane = summoner_death_16.groupby(['lane']).agg(count = pd.NamedAgg(column='lane',aggfunc ='count')).reset_index()
+                            total_count = groupby_lane['count'].sum()
+                            groupby_lane['ratio'] = (groupby_lane['count'] / total_count) * 100
 
-                    #         groupby_lane = groupby_lane.sort_values(by=['ratio'],ascending=False)
+                            groupby_lane = groupby_lane.sort_values(by=['ratio'],ascending=False)
 
-                    #         death_spot_sc(summoner_death_16,'Reds')
-                    #         st.markdown('''
-                    #                      <div> \n
-                    #                     * 패배한 경기에서 왁굳님의 경우 상대적으로 <span style="color:orange"> 후반부에 짤리는 경우</span> 가 특히 많았습니다.
-                    #                     * 한타가 많이 일어나고 시야확보가 중요한  <span style="color:orange"> 정글지역, 그리고 사이드(TOP,BOTTOM)를 밀다가 죽는 경우가 약 83% </span> 입니다.
-                    #                     </div>
-                    #                     ''', unsafe_allow_html=True)
+                            death_spot_sc(summoner_death_16,'Reds')
+                            st.markdown('''
+                                         <div> \n
+                                        * 패배한 경기에서 왁굳님의 경우 상대적으로 <span style="color:orange"> 후반부에 짤리는 경우</span> 가 특히 많았습니다.
+                                        * 한타가 많이 일어나고 시야확보가 중요한  <span style="color:orange"> 정글지역, 그리고 사이드(TOP,BOTTOM)를 밀다가 죽는 경우가 약 83% </span> 입니다.
+                                        </div>
+                                        ''', unsafe_allow_html=True)
 
-                    #         st.dataframe(groupby_lane)
+                            st.dataframe(groupby_lane)
 
                 with tab4:
                     st.subheader('☠️ 합류하는데 차이가 있을까?')
@@ -1551,505 +1453,6 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                     
                     
 # ------------------------------------------------------------------ DUO CARD ----------------------------------------------------------------------------------#                                                      
-
-        # st.divider()
-        # with st.container():
-        # # 듀오 승률 계산
-        #     @st.cache_data
-        #     def duo_win(match_info,summoner_name):
-
-        #         win = match_info[match_info['summonerName'] == summoner_name]['win_kr'].value_counts() #['championName']
-        #         c_win = win[0].astype(str)
-        #         c_lose = win[1].astype(str)
-
-        #         duo_ratio = [
-        #             {"id": "Wins", "label": "Wins", "value": c_win},
-        #             {"id": "Losses", "label": "Losses", "value": c_lose}
-        #         ]
-        #         return duo_ratio
-
-        #     chun_win_lose = duo_win(match_info,'돈까스')
-        #     chun_radar,chun_vs_df = radar_chart(match_info, '돈까스', 'JUNGLE') # 508
-
-        #     nor_win_lose = duo_win(match_info,'The Nollan')
-        #     nol_radar,nor_vs_df = radar_chart(match_info,'The Nollan','JUNGLE') # 6473
-
-
-        #     # 듀오 인포
-        #     chun_id = 'MP9q12SlMt7EFmMxbd1IoqJsOPGp9lMA6KTjWBuzPYnn7Q' 
-        #     noll_id = '4f9H3ie0k-21eW1RiocOqzN_YQNn5kTL-wIhrHb_-GIxKQ'
-
-        #     chun = get_rank_info (chun_id, api_key)
-        #     noll = get_rank_info (noll_id, api_key)
-
-        #     chun_tier = chun[0]['tier']
-        #     noll_tier = noll[0]['tier']
-            
-
-        #     # 듀오경기id (정글인 경우만)
-        #     n = champion_info[(champion_info['summonerName'] == 'The Nollan')&(champion_info['teamPosition'] =='JUNGLE')]['matchId'].tolist()
-        #     c = champion_info[(champion_info['summonerName'] =='돈까스') & (champion_info['teamPosition'] =='JUNGLE')]['matchId'].tolist()
-
-
-
-        #     # 듀오의 어시스트 정보
-        #     nol_assist = nol_kill_log[nol_kill_log['assistingParticipantIds'].apply(lambda ids: 'The Nollan' in ids if isinstance(ids, list) else False)]
-
-        #     chun_assist = chun_kill_log[chun_kill_log['assistingParticipantIds'].apply(lambda ids: '돈까스' in ids if isinstance(ids, list) else False)]
-
-
-        #     # 놀란과 함께한 경기의 전체킬
-        #     nol_wak_kill = match_info[(match_info['matchId'].isin(n)) & (match_info['summonerName']== summoner_name)]['kills'].sum()
-        #     chun_wak_kill = match_info[(match_info['matchId'].isin(c)) & (match_info['summonerName']== summoner_name)]['kills'].sum()
-
-        #     # 킬관여율
-        #     nol_kill_rate = round(((len(nol_assist))/(nol_wak_kill))*100,1)
-        #     chun_kill_rate = round(((len(chun_assist))/(chun_wak_kill))*100,1)
-
-
-        #     # 어떻게 표현?
-        #     # 승률, 듀오경기 횟수, 놀란킬 기여 n개, (ex) n개의 킬 중에서 x개의 킬이 놀란님과 함께 만들었습니다.
-
-
-
-        # with st.container():
-        #     st.subheader('🤡 DUO SCORE - 누가 충신인가')
-        #     st.write(''' 우왁굳님의 최근 50경기중 듀오를 진행한 경기를 바탕으로 듀오점수를 매겨보았습니다. 10경기 이상 진행한 듀오의 기준입니다.                  
-
-        #               ''')
-        #     st.caption(''' 
-        #                * 천양님의 경우 우왁굳+돈까스 합산한 결과입니다.
-        #                * 천양, 놀란님 모두 JUNGLE 포지션이었던 경기를 기준으로 집계 되었습니다. 
-        #                * 정글링 점수? 오브젝트, 드래곤, 바론, 상대정글을 카정한 횟수에 관한 지표입니다. 
-        #                ''')
-
-
-
-
-        #     with elements("DUO"):                
-        #         layout = [
-        #                     dashboard.Item("item1", 0, 0, 3, 3,isDraggable=True, isResizable=True ),
-        #                     dashboard.Item("item2", 3, 0, 2, 1,isDraggable=True, isResizable=True ),
-        #                     dashboard.Item("item2_1", 3, 3, 2, 2,isDraggable=True, isResizable=True ),
-                                                        
-        #                     dashboard.Item("item3", 6, 0, 3, 3,isDraggable=True, isResizable=True ),
-        #                     dashboard.Item("item4", 9, 0, 2, 1,isDraggable=True, isResizable=True ),
-        #                     dashboard.Item("item5", 9, 3, 2, 1,isDraggable=True, isResizable=True ),
-
-        #                     ]
-                
-        #         with dashboard.Grid(layout):
-        #                 mui.Card( # 천양
-        #                     children = [
-        #                         mui.CardContent(                                 
-        #                             sx={
-        #                                 "display": "flex",
-        #                                 "align-items": "center",
-        #                                 "text-align":"center",
-        #                                 "padding": "0 8px 0 8px",
-        #                                 "gap" : 1                                        
-        #                             },                                    
-                                    
-        #                             children = [
-        #                                 mui.CardMedia( 
-        #                                     sx={
-        #                                         "height": 70,
-        #                                         "width": 70,
-        #                                         "borderRadius": "10%",
-        #                                         "backgroundImage": f"url(http://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/508.png)",  
-        #                                     },
-        #                                 ),
-                                     
-        #                                 mui.Divider(orientation="vertical",sx={"height": "100px"}), 
-                                        
-        #                                 mui.CardContent(
-        #                                     children=[
-        #                                         mui.Typography(
-        #                                                 "Most Lane", variant="body2",sx={'text-align':'center','mt':0}),                                                                                           
-        #                                         mui.CardMedia( 
-        #                                             sx={
-        #                                                 "height": 70,
-        #                                                 "width": 70,
-        #                                                 "backgroundImage": f"url(https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-jungle.png)",
-        #                                                 "position":'center'
-        #                                             },
-        #                                         )], sx={'paddig':'0'}            
-        #                                 ),
-
-
-        #                                 mui.Divider(orientation="vertical",sx={"height": "100px"}), 
-
-        #                                 mui.CardContent(
-        #                                     children=[
-        #                                     mui.Typography(
-        #                                             "TIER", variant="body2",sx={'text-align':'center'}),                                                                                           
-
-        #                                     mui.CardMedia( 
-        #                                         sx={
-        #                                             "height":70,
-        #                                             "width":100,                                     
-        #                                             "backgroundImage": f"url(https://i.ibb.co/WD5p2cF/Rank-Bronze.png)",  
-        #                                             },
-        #                                         )
-        #                                     ] ,sx={'padding':0},
-        #                                     )
-        #                                 ]
-        #                             ),                                 
-
-        #                             mui.Divider(sx={"height": "1px"}), # orientation="vertical",
-                                    
-        #                             nivo.Radar(
-        #                                 data=chun_radar,
-        #                                 keys=['돈까스','상대라이너'],
-        #                                 colors={'scheme': 'accent' },
-        #                                 indexBy="var",
-        #                                 valueFormat=">-.2f",
-        #                                 maxValue={1.0},
-        #                                 margin={ "top": 50, "right": 60, "bottom": 110, "left": 80 },
-        #                                 borderColor={ "from": "color" },
-        #                                 gridShape="linear",
-        #                                 gridLevels={3},
-        #                                 gridLabelOffset=15,
-        #                                 dotSize=5,
-        #                                 dotColor={ "theme": "background" },
-        #                                 dotBorderWidth=1,
-        #                                 motionConfig="wobbly",
-        #                                 legends=[
-        #                                     {
-        #                                         "anchor": "top-left",
-        #                                         "direction": "column",
-        #                                         "translateX": -70,
-        #                                         "translateY": -30,
-        #                                         "itemWidth": 100,
-        #                                         "itemHeight": 20,
-        #                                         "itemTextColor": "white",
-        #                                         "symbolSize": 15,
-        #                                         "symbolShape": "circle",
-        #                                         "effects": [
-        #                                             {
-        #                                                 "on": "hover",
-        #                                                 "style": {
-        #                                                     "itemTextColor": "white"
-        #                                                 }
-        #                                             }
-        #                                         ]
-        #                                     }
-        #                                 ],
-        #                                 theme={
-        #                                     "textColor": "white",
-        #                                     "tooltip": {
-        #                                         "container": {
-        #                                             "background": "#262730",
-        #                                             "color": "white",
-        #                                         }
-        #                                     }
-        #                                 }
-        #                             ),
-        #                     ]
-        #                     ,key="item1",sx=card_sx)
-
-        #                 mui.Card( # 천양 승률
-        #                     children=[
-        #                         mui.Typography(
-        #                                 "DUO WIN",variant="body2",sx={'background-color':'#181819','text-align':'center'}),  
-                                
-        #                         nivo.Pie( 
-        #                             data=chun_win_lose,
-        #                             margin={"top":10, "right": 20, "bottom": 50, "left": 20 },
-        #                             innerRadius={0.5},
-        #                             padAngle={2},
-        #                             activeOuterRadiusOffset={8},
-        #                             colors=['#459ae5', '#ed4141'],                   
-        #                             borderWidth={1},
-        #                             borderColor={
-        #                                 "from": 'color',
-        #                                 "modifiers": [
-        #                                     [
-        #                                         'darker',
-        #                                         0.2,
-        #                                         'opacity',
-        #                                         0.6
-        #                                     ]
-        #                                 ]
-        #                             },
-        #                             enableArcLinkLabels=False,
-        #                             arcLinkLabelsSkipAngle={10},
-        #                             arcLinkLabelsTextColor="white",
-        #                             arcLinkLabelsThickness={0},
-        #                             arcLinkLabelsColor={ "from": 'color', "modifiers": [] },
-        #                             arcLabelsSkipAngle={10},
-        #                             arcLabelsTextColor={ "theme": 'background' },
-        #                             legends=[
-        #                                 {
-        #                                     "anchor": "bottom",
-        #                                     "direction": "row",
-        #                                     "translateX": 0,
-        #                                     "translateY": 20,
-        #                                     "itemWidth": 50,
-        #                                     "itemsSpacing" : 5,
-        #                                     "itemHeight": 20,
-        #                                     "itemTextColor": "white",
-        #                                     "symbolSize": 7,
-        #                                     "symbolShape": "circle",
-        #                                     "effects": [
-        #                                         {
-        #                                             "on": "hover",
-        #                                             "style": {
-        #                                                 "itemTextColor": "white"
-        #                                             }
-        #                                         }
-        #                                     ]
-        #                                 }
-        #                             ],
-        #                             theme={
-        #                                 "background": "#181819",
-        #                                 "textColor": "white",
-        #                                 "tooltip": {
-        #                                     "container": {
-        #                                         "background": "#181819",
-        #                                         "color": "white",
-        #                                     }
-        #                                 }
-        #                             },
-        #                         ),
-                                                    
-        #                         mui.Typography(
-        #                             "기여도",
-        #                             variant="h4",
-        #                             ),                                
-        #                         ]
-                                 
-                                 
-        #                         ,key="item2", sx=card_sx)
-
-        #                 mui.Card(
-                            
-        #                         mui.CardContent( # 설명
-        #                             children=[  
-        #                                 mui.Typography(
-        #                                     " 킬 관여율 ",
-        #                                     variant="h5",
-        #                                     component="div"
-        #                                 ),
-        #                                 mui.Typography(
-        #                                     f''' 우왁굳님의 kill {chun_wak_kill}개 중에서,
-        #                                         {len(chun_assist)}번의 천양 어시스트를 받았어요!''',
-        #                                     variant="body2",
-        #                                     color="text.secondary",
-        #                                     sx={"mb":2,
-        #                                         "font-size": "12px"},
-        #                                 ),
-
-        #                                 mui.Typography(
-        #                                     f'{chun_kill_rate}',
-        #                                     variant='h3',
-        #                                     # sx={"font-size": "30px"}
-                                                                                    
-        #                                 )]
-        #                             )
-                                                            
-                            
-        #                     ,key='item2_1',sx=card_sx)
-
-                        
-
-        #                 mui.Card( # 놀란
-        #                     children = [
-        #                         mui.CardContent(                                 
-        #                             sx={
-        #                                 "display": "flex",
-        #                                 "align-items": "center",
-        #                                 "text-align":"center",
-        #                                 "padding": "0 8px 0 8px",
-        #                                 "gap" : 1                                        
-        #                             },                                    
-                                    
-        #                             children = [
-        #                                 mui.CardMedia( 
-        #                                     sx={
-        #                                         "height": 80,
-        #                                         "width": 80,
-        #                                         "borderRadius": "10%",
-        #                                         "backgroundImage": f"url(http://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/6473.png)",  
-        #                                     },
-        #                                 ),
-        #                                 mui.Divider(orientation="vertical",sx={"height": "100px"}), 
-
-        #                                 mui.CardMedia( 
-        #                                     sx={
-        #                                         "height": 80,
-        #                                         "width": 80,
-        #                                         "backgroundImage": f"url(https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-jungle.png)"
-        #                                     },
-        #                                 ),               
-
-        #                                 mui.Divider(orientation="vertical",sx={"height": "100px"}), 
-
-        #                                 mui.CardMedia( 
-        #                                         sx={
-        #                                             "height":"90px",
-        #                                             "width":"170px",                                     
-        #                                             "backgroundImage": f"url(https://i.ibb.co/cCdBMhk/Rank-Silver.png)",  
-        #                                             },
-        #                                         ),
-        #                                     ]
-        #                                 ),                                 
-
-        #                             mui.Divider(sx={"height": "1px"}), # orientation="vertical",
-                                    
-        #                             nivo.Radar(
-        #                                 data=nol_radar,
-        #                                 keys=['The Nollan','상대라이너'],
-        #                                 colors={'scheme': 'accent' },
-        #                                 indexBy="var",
-        #                                 valueFormat=">-.2f",
-        #                                 maxValue={1.0},
-        #                                 margin={ "top": 50, "right": 60, "bottom": 110, "left": 80 },
-        #                                 borderColor={ "from": "color" },
-        #                                 gridShape="linear",
-        #                                 gridLevels={3},
-        #                                 gridLabelOffset=15,
-        #                                 dotSize=5,
-        #                                 dotColor={ "theme": "background" },
-        #                                 dotBorderWidth=1,
-        #                                 motionConfig="wobbly",
-        #                                 legends=[
-        #                                     {
-        #                                         "anchor": "top-left",
-        #                                         "direction": "column",
-        #                                         "translateX": -70,
-        #                                         "translateY": -30,
-        #                                         "itemWidth": 100,
-        #                                         "itemHeight": 20,
-        #                                         "itemTextColor": "white",
-        #                                         "symbolSize": 15,
-        #                                         "symbolShape": "circle",
-        #                                         "effects": [
-        #                                             {
-        #                                                 "on": "hover",
-        #                                                 "style": {
-        #                                                     "itemTextColor": "white"
-        #                                                 }
-        #                                             }
-        #                                         ]
-        #                                     }
-        #                                 ],
-        #                                 theme={
-        #                                     "textColor": "white",
-        #                                     "tooltip": {
-        #                                         "container": {
-        #                                             "background": "#262730",
-        #                                             "color": "white",
-        #                                         }
-        #                                     }
-        #                                 }
-        #                             ),
-        #                     ]
-        #                     ,key="item3",sx=card_sx)
-
-        #                 mui.Card( # 놀란 승률
-        #                     children=[
-        #                         mui.Typography(
-        #                                 "DUO WIN",variant="body2",sx={'background-color':'#181819','text-align':'center'}),  
-                                
-        #                         nivo.Pie( 
-        #                             data=nor_win_lose,
-        #                             margin={"top":10, "right": 20, "bottom": 50, "left": 20 },
-        #                             innerRadius={0.5},
-        #                             padAngle={2},
-        #                             activeOuterRadiusOffset={8},
-        #                             colors=['#459ae5', '#ed4141'],                   
-        #                             borderWidth={1},
-        #                             borderColor={
-        #                                 "from": 'color',
-        #                                 "modifiers": [
-        #                                     [
-        #                                         'darker',
-        #                                         0.2,
-        #                                         'opacity',
-        #                                         0.6
-        #                                     ]
-        #                                 ]
-        #                             },
-        #                             enableArcLinkLabels=False,
-        #                             arcLinkLabelsSkipAngle={10},
-        #                             arcLinkLabelsTextColor="white",
-        #                             arcLinkLabelsThickness={0},
-        #                             arcLinkLabelsColor={ "from": 'color', "modifiers": [] },
-        #                             arcLabelsSkipAngle={10},
-        #                             arcLabelsTextColor={ "theme": 'background' },
-        #                             legends=[
-        #                                 {
-        #                                     "anchor": "bottom",
-        #                                     "direction": "row",
-        #                                     "translateX": 0,
-        #                                     "translateY": 20,
-        #                                     "itemWidth": 50,
-        #                                     "itemsSpacing" : 5,
-        #                                     "itemHeight": 20,
-        #                                     "itemTextColor": "white",
-        #                                     "symbolSize": 7,
-        #                                     "symbolShape": "circle",
-        #                                     "effects": [
-        #                                         {
-        #                                             "on": "hover",
-        #                                             "style": {
-        #                                                 "itemTextColor": "white"
-        #                                             }
-        #                                         }
-        #                                     ]
-        #                                 }
-        #                             ],
-        #                             theme={
-        #                                 "background": "#181819",
-        #                                 "textColor": "white",
-        #                                 "tooltip": {
-        #                                     "container": {
-        #                                         "background": "#181819",
-        #                                         "color": "white",
-        #                                     }
-        #                                 }
-        #                             },
-        #                         ),
-                                                    
-        #                         mui.Typography(
-        #                             "기여도",
-        #                             variant="h4",
-        #                             ),                                
-        #                         ]
-                                 
-                                 
-        #                         ,key="item4", sx=card_sx)
-
-        #                 mui.Card(
-                            
-        #                         mui.CardContent( # 설명
-        #                             children=[  
-        #                                 mui.Typography(
-        #                                     " 킬 관여율 ",
-        #                                     variant="h5",
-        #                                     component="div"
-        #                                 ),
-        #                                 mui.Typography(
-        #                                     f''' 우왁굳님의 KILL {nol_wak_kill}번중에서
-        #                                         {len(nol_assist)}번의 놀란 어시스트를 받았어요!''',
-        #                                     variant="body2",
-        #                                     color="text.secondary",
-        #                                     sx={"mb":2,
-        #                                         "font-size": "12px"},
-        #                                 ),
-
-        #                                 mui.Typography(
-        #                                     f'{chun_kill_rate}',
-        #                                     variant='h3',
-        #                                     # sx={"font-size": "30px"}
-                                                                                    
-        #                                 )]
-        #                             )
-                                                            
-                            
-        #                     ,key='item5',sx=card_sx)
-
 
 
 
