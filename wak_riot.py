@@ -434,7 +434,7 @@ def death_spot(df):
 
     # 이미지로 스캐터 플롯 생성
     for x, y in zip(x_data, y_data):
-        url = 'C:/test/img/death.png'
+        url = 'img\death.png'
         img = Image.open(url)
 
         # 원형 이미지로 스캐터 플롯 생성
