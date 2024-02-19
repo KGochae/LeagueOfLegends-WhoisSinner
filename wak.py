@@ -632,7 +632,7 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                     ''', unsafe_allow_html=True)
 
                     # st.image('https://i.ibb.co/Y3TRmsM/image.png', width = 300)
-                    st.image('https://get.wallhere.com/photo/League-of-Legends-jungle-Terrain-screenshot-atmospheric-phenomenon-computer-wallpaper-284470.jpg', width = 1000)
+                    st.image('https://get.wallhere.com/photo/League-of-Legends-jungle-Terrain-screenshot-atmospheric-phenomenon-computer-wallpaper-284470.jpg', width = 800)
 
 
                 with tab1: # 골드
