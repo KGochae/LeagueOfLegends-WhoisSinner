@@ -1,5 +1,5 @@
 # 🖥️ LeagueOfLegends-WhoisSinner?
-> ### 🔎 실제 [대시보드](https://wakgood-dashbaord.streamlit.app/)를 구경하실 수 있으며! 정리된 내용은 pdf/ 파일안에 요약되어 있습니다! 😁 
+> ### 실제 [대시보드](https://wakgood-dashbaord.streamlit.app/)를 구경하실 수 있으며! 정리된 내용은 pdf/ 파일안에 요약되어 있습니다! 😁 
 
 
 
