@@ -12,9 +12,7 @@
 ### 해당 소환사의 기본 지표
 > 그동안 만난 미드라이너 (주포지션)와의 게임지표를 비교해 보았습니다.
 
-![image](https://github.com/KGochae/LeagueOfLegends-WhoisSinner/assets/86241587/203e9180-8a65-4f3d-9ec0-bf65d1c2432f)
-
-
+![image](https://github.com/KGochae/LeagueOfLegends-WhoisSinner/assets/86241587/7abad176-224f-437c-8558-3910528470d5)
 
 ### 🖥️ main info, 패배한 경기 eda
 ![image](https://github.com/KGochae/LeagueOfLegends-WhoisSinner/assets/86241587/67316088-83a7-4fc8-ba24-4d76c3128733)
