@@ -86,7 +86,7 @@ seaborn==0.12.2
 six==1.16.0
 smmap==5.0.0
 st-card-component==0.0.10
-streamlit==1.25.0
+streamlit==1.27.0
 streamlit-apexjs==0.0.3
 streamlit-card==0.0.4
 streamlit-chat==0.0.2.2
