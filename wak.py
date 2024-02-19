@@ -303,26 +303,6 @@ if hasattr(st.session_state, 'kill_and_ward'): # ward_log
 
 
 
-    # 해당 소환사의 와드
-    summoner_ward_log = ward_log[ward_log['summonerName'] == summoner_name]
-    summoner_ward_log['timestamp'] = summoner_ward_log['timestamp'].astype(int)
-    summoner_ward_log_static = summoner_ward_log.groupby(['matchId','win']).agg(
-        ward_cnt = pd.NamedAgg(column='matchId', aggfunc='count')
-    )
-
-    summoner_ward_log_15 = summoner_ward_log[summoner_ward_log['timestamp'] < 16]
-    # summoner_ward_log_15 = summoner_ward_log_15.groupby(['timestamp']).size().rename('ward_placed').reset_index()
-    # avg_ward = summoner_ward_log_15.groupby('timestamp')['creat'].mean()
-
-    # st.write(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] > 15)].groupby(['matchId']).agg(
-    #             ward_cnt = pd.NamedAgg(column='matchId',aggfunc='count')).mean())
-    
-    # st.write(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] < 16)].groupby(['matchId']).agg(
-    #             ward_cnt = pd.NamedAgg(column='matchId',aggfunc='count')).mean())
-    
-    # st.write(len(ward_log[(ward_log['summonerName'] == summoner_name) & (ward_log['timestamp'] < 16)]))
-
-
 # 흑백화면, 골드 통계
 @st.cache_data
 def lose_static():
@@ -392,21 +372,6 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                         ]
                             card_sx = {"background-color":"#181819","borderRadius": "10px"} # "outline": "1px solid #31323b"
                             with dashboard.Grid(layout):
-
-                                # mui.Card( # 티어,랭크
-
-                                #         mui.Typography('TIER',body='h4',sx={'text-align':'center',"background-color":"#181819"}),                                        
-                                #         mui.CardMedia( 
-                                #             mui.Divider(),
-                                #             sx={
-                                #                 "height":"90px",
-                                #                 "width":"170px",                                     
-                                #                 "backgroundImage": f"url(https://i.ibb.co/2ZrRXqP/tft-regalia-{tier}.png)",  
-                                #             },                                        
-                                #         )                                        
- 
- 
-                                #        , key='item_tier',sx=card_sx)
                                 
                                 mui.Box( # radar charts
                                     children = [
@@ -603,7 +568,7 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                         st.markdown(f'''
                                 <div> \n
 
-                                * 평균적으로 한웨이브의 미니언을 놓치는 수치입니다.
+                                * 상대 라이너와 비교했을 때, 평균적으로 한웨이브의 미니언을 놓치는 수치입니다.
  
                                 </div>
                                 ''',unsafe_allow_html= True)
@@ -643,133 +608,6 @@ if hasattr(st.session_state, 'summoner_radar_data'):
 
 
                     st.subheader('Champion Data')
-                    st.caption(''' 5판이상 사용한 챔피언 기준입니다. ''')
-
-                    # with elements("most_champ"):                
-                    #     layout = [
-                    #                 dashboard.Item("champ1", 0, 0, 1, 3,isDraggable=True, isResizable=True ),
-                    #                 dashboard.Item("champ2", 2, 0, 1, 3,isDraggable=True, isResizable=True ),
-
-                    #                 ]
-                        
-                    #     with dashboard.Grid(layout):
-                    #         mui.Card(
-                    #             children=[      
-                    #                 mui.CardMedia( # most champ 1
-                    #                         sx={
-                    #                             "height": 110,
-                    #                             "backgroundImage": f"linear-gradient(rgba(0, 0, 0, 0), rgba(10,10,10,10)),url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{first_champ}_3.jpg)",
-                    #                             "backgroundPosition": "bottom",
-                    #                         }
-                    #                     ),
-                    #                 mui.CardContent(
-                    #                     sx={'padding':2}, # 설명
-                    #                     children=[  
-                    #                         mui.Typography(
-                    #                             f" {first_champ} ",
-                    #                             variant="h4",
-                    #                             component="div"
-                    #                         ),
-                    #                         mui.Typography(
-                    #                                 "ㅎㅇ",
-                    #                             variant="body2",
-                    #                             color="text.secondary",
-                    #                             sx={
-                    #                                 "font-size": "12px"},
-                                                
-                    #                         )]
-                    #                     ),
-
-
-                    #                 mui.Box( 
-                    #                     sx={
-                    #                         "display": "flex",
-                    #                         "gap": "20px",
-                    #                         "padding": "0",
-                    #                         "justify-content": "center",
-                    #                     },
-                    #                     children=[
-                    #                         mui.Box( 
-                    #                             sx={
-                    #                                 "display": "flex",
-                    #                                 "flexDirection": "column",
-                    #                                 "alignItems": "center",
-                    #                             },
-                    #                             children=[
-      
-                    #                                 mui.Typography(
-                    #                                     f'챔피언 승률, 최다 라인전 CS, 최다 솔로킬',
-                    #                                     sx={"font-size": "12px"}
-                    #                                 )
-                    #                             ]
-                    #                         ),
-
-
-                    #                     ]
-                    #                 ),
-
-                    #             ] , key="mostchamp", elevation=0 , sx={"background-color":"black","borderRadius": "23px",'text-align':'center'}) #  sx = {"background-color":"#0a0a0adb","borderRadius": "23px"}
-
-                    #         mui.Card(
-                    #             children=[      
-                    #                 mui.CardMedia( # 챔피언
-                    #                         sx={
-                    #                             "height": 110,
-                    #                             "backgroundImage": f"linear-gradient(rgba(0, 0, 0, 0), rgba(10,10,10,10)),url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{second_champ}_0.jpg)",
-                    #                             "backgroundPosition": "bottom",
-                    #                         }
-                    #                     ),
-                                  
-                    #                 mui.CardContent(
-                    #                     sx={'padding':2}, # 설명
-                    #                     children=[  
-                    #                         mui.Typography(
-                    #                             f" {second_champ} ",
-                    #                             variant="h4",
-                    #                             component="div"
-                    #                         ),
-                    #                         mui.Typography(
-                    #                                 "ㅎㅇ",
-                    #                             variant="body2",
-                    #                             color="text.secondary",
-                    #                             sx={
-                    #                                 "font-size": "12px"},
-                                                
-                    #                         )]
-                    #                     ),
-
-
-                    #                 mui.Box( 
-                    #                     sx={
-                    #                         "display": "flex",
-                    #                         "gap": "20px",
-                    #                         "padding": "0",
-                    #                         "justify-content": "center",
-                    #                     },
-                    #                     children=[
-                    #                         mui.Box( 
-                    #                             sx={
-                    #                                 "width" : "70px",
-                    #                                 "display": "flex",
-                    #                                 "flexDirection": "column",
-                    #                                 "alignItems": "center",
-                    #                             },
-                    #                             children=[
-    
-                    #                                 mui.Typography(
-                    #                                     f';;',
-                    #                                     sx={"font-size": "30px"}
-                    #                                 )
-                    #                             ]
-                    #                         ),
-
-
-                    #                     ]
-                    #                 ),
-
-                    #             ] , key="champ2", elevation=0 , sx={"background-color":"black","borderRadius": "23px",'text-align':'center'}) 
-            
-                        
                     expander = st.expander("챔피언 데이터")
                     with expander:
                         st.dataframe(champ_static)
@@ -793,8 +631,9 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                     </div> 
                                     ''', unsafe_allow_html=True)
 
-                    st.image('https://i.ibb.co/Y3TRmsM/image.png', width = 300)
-                    
+                    # st.image('https://i.ibb.co/Y3TRmsM/image.png', width = 300)
+                    st.image('https://get.wallhere.com/photo/League-of-Legends-jungle-Terrain-screenshot-atmospheric-phenomenon-computer-wallpaper-284470.jpg')
+
 
                 with tab1: # 골드
                     st.subheader(''' ✔️ (패배한 경기) 포지션별 골드차이(20분)''')
