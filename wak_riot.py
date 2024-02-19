@@ -6,12 +6,13 @@ import numpy as np
 import streamlit as st
 import requests
 from sklearn.preprocessing import StandardScaler
+import time
 
 
 # ------ image matplotlib ----------- #
 
 import matplotlib.pyplot as plt
-from PIL import Image, ImageDraw,ImageEnhance
+from PIL import Image
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from scipy.stats import gaussian_kde
@@ -19,8 +20,6 @@ from scipy.stats import gaussian_kde
 # matplotlib 에러
 import matplotlib
 matplotlib.use('Agg')  # Use the 'agg' backend
-
-
 
 # Create API client.
 api_key  = st.secrets.RIOTAPI.api_key
@@ -40,7 +39,7 @@ def get_puuid(summoner_name, api_key):
     return puuid, summoner_id, iconId
 
 
-def get_match_ids(puuid, api_key, start= 0, count=70):
+def get_match_ids(puuid, api_key, start= 0, count=65):
     # Get match ids
     matchid_url = "https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?type=ranked&start={}&count={}&api_key={}"
     url = matchid_url.format(puuid, start, count, api_key)
@@ -49,16 +48,31 @@ def get_match_ids(puuid, api_key, start= 0, count=70):
     return match_ids
 
 
-def get_match_data_logs(match_ids,api_key):
-    # Get match data for each match id
+def get_match_data_logs(match_ids, api_key):
     match_data_logs = []
     time_url = 'https://asia.api.riotgames.com/lol/match/v5/matches/{}/timeline?api_key={}'
+    
     for i, match_id in enumerate(match_ids):
         url = time_url.format(match_id, api_key)
         response = requests.get(url)
+        
+        # Check if the status code is 429 (Rate Limit Exceeded)
+        if response.status_code == 429:
+            # Get the Retry-After header value
+            retry_after = int(response.headers['Retry-After'])
+            
+            # Print a message or handle the delay as needed
+            print(f"Rate Limit Exceeded. Waiting for {retry_after} seconds.")
+            
+            # Wait for the specified time before making the next API call
+            time.sleep(retry_after)
+            
+            # Retry the API call after waiting
+            response = requests.get(url)
+        
         match_data_logs.append(pd.DataFrame(response.json()))
-    
-    return  match_data_logs
+
+    return match_data_logs
 
 
 # 유저의 랭크 , 승패
@@ -73,10 +87,8 @@ def get_rank_info (summoner_id, api_key):
 
 
 
-
-
 # match_v5 (경기가 끝나고 나오는 통계요약)
-def get_match_v5(match_ids, api_key):
+def get_match_v5(match_ids,summoner_name, api_key):
     url = 'https://asia.api.riotgames.com/lol/match/v5/matches/{}?api_key={}'
     match_info_list = []
     champion_info_list = []
@@ -100,21 +112,26 @@ def get_match_v5(match_ids, api_key):
 
         challenge = pd.DataFrame(sample['challenges'].tolist())
 
-        col = challenge[['soloKills', 'multikills', 'abilityUses', 'damageTakenOnTeamPercentage', 'skillshotsDodged', 'skillshotsHit', 'enemyChampionImmobilizations', 'laneMinionsFirst10Minutes','controlWardsPlaced'
-                        , 'visionScorePerMinute', 'wardTakedowns', 'effectiveHealAndShielding', 'dragonTakedowns', 'baronTakedowns', 'teamBaronKills']]
+        col = challenge[['soloKills', 'multikills', 'abilityUses', 'skillshotsDodged', 'skillshotsHit', 'enemyChampionImmobilizations', 'laneMinionsFirst10Minutes','controlWardsPlaced'
+                        , 'wardTakedowns', 'effectiveHealAndShielding', 'dragonTakedowns', 'baronTakedowns', 'teamBaronKills']]
         jungle_and_etc_col = challenge.filter(regex='^jungle|Jungle|kda|Per')
 
         match_info = pd.concat([sample, col, jungle_and_etc_col], axis=1)
         match_info['summonerName'] = match_info.apply(lambda row: row['puuid'][:10] if row['summonerName'].strip() == '' else row['summonerName'], axis=1)
+
+        # CS 집계
         match_info['totalCS'] = match_info['totalMinionsKilled'] + match_info['neutralMinionsKilled']
+        match_info['totalCS10Minutes'] = match_info['laneMinionsFirst10Minutes'] + match_info['jungleCsBefore10Minutes']
+
+        # match_info 에 matchid 정보추가
         match_info['matchId'] = match_df['metadata']['matchId']
         match_info['championName'] = match_info['championName'].apply(lambda x: 'Fiddlesticks' if x == 'FiddleSticks' else x)  # 피들스틱 에러
         match_info.loc[match_info['summonerName'] == '우왁굳', 'summonerName'] = '돈까스'
+        match_info['win_kr'] = match_info['win'].apply(lambda x: '승리' if x == 1 else '패배')
+        match_info = match_info[match_info['matchId'] != 'KR_6900203193']
+
 
         champion_info = match_info[['win','matchId', 'participantId', 'teamId', 'teamPosition', 'summonerName', 'puuid', 'championName']]
-
-        match_info['win_kr'] = match_info['win'].apply(lambda x: '승리' if x == 1 else '패배')
-        match_info['totalCS10Minutes'] = match_info['laneMinionsFirst10Minutes'] + match_info['jungleCsBefore10Minutes']
         
         # 각각의 데이터를 리스트에 추가
         match_info_list.append(match_info)
@@ -123,6 +140,24 @@ def get_match_v5(match_ids, api_key):
         match_info = pd.concat(match_info_list)
         champion_info = pd.concat(champion_info_list)        
         match_info = match_info[(match_info['timePlayed'] >= 1200) & (match_info['timePlayed'] < 2500)]
+
+        # 해당 소환사의 팀을 우리팀, 나머지를 상대팀으로
+        team_info = (
+            champion_info.groupby(['matchId', 'teamId'])
+            .filter(lambda x: any(x['summonerName'] == summoner_name))
+        )[['matchId','teamId','participantId','summonerName','championName','teamPosition','win']]
+
+        team_info['teamId'] = '우리팀'
+
+        opponent_info = (
+            champion_info.groupby(['matchId', 'teamId'])
+                .filter(lambda x: not any(x['summonerName'] == summoner_name))
+        )[['matchId','teamId','participantId','summonerName','championName','teamPosition','win']]
+
+        opponent_info['teamId'] = '상대팀'
+
+        champion_info = pd.concat([team_info, opponent_info])
+
 
     return match_info, champion_info
 
@@ -187,15 +222,22 @@ def gold_data(match_data_logs,match_ids):
 # 진경기의 포지션별 골드차이를 가져오는 함수
 def lose_match_gold_diff(log_df,summoner_name,teamPosition,champion_info):
 
+    log_df['timestamp'] = log_df['timestamp'].astype(int)
+
     # GOLD 와 관련된 컬럼
     gold = log_df[['matchId','timestamp','participantId','position','totalGold','xp','level']]
     champion_info = champion_info[['matchId','participantId','teamId','teamPosition','summonerName','championName','win']]
     gold_df = pd.merge(gold, champion_info, on=['matchId', 'participantId'], how='inner')
     lose_match_list = champion_info[(champion_info['summonerName'] == summoner_name) & (champion_info['teamPosition']== teamPosition) & (champion_info['win']== False)]['matchId'].tolist()
+
+    # 진경기 
     lose_match_gold = gold_df[gold_df['matchId'].isin(lose_match_list)].groupby(['matchId','timestamp','win','teamPosition']).agg({'totalGold':'sum'}).reset_index()
 
+    # 팀별 골드차이
+    lose_match_gold_by_team = gold_df[gold_df['matchId'].isin(lose_match_list)].groupby(['matchId','timestamp','teamId']).agg({'totalGold':'sum'}).reset_index()
+
+
     # (15분, 라인전 동안) 포지션별 골드차이
-    lose_match_gold['timestamp'] = lose_match_gold['timestamp'].astype(int)
     line_lose_15 = lose_match_gold[lose_match_gold['timestamp'] < 21].sort_values(by=['matchId','timestamp','win'], ascending=[True,True,False])
     line_lose_15['totalGold_diff'] = line_lose_15.groupby(['matchId','timestamp','teamPosition'])['totalGold'].diff()
     gold_by_position = line_lose_15.groupby(['teamPosition','timestamp'])['totalGold_diff'].mean().reset_index()
@@ -203,8 +245,8 @@ def lose_match_gold_diff(log_df,summoner_name,teamPosition,champion_info):
     gold_df = gold_by_position[gold_by_position['teamPosition'] != '']
     gold_df['totalGold_diff'] = gold_df['totalGold_diff'].astype(int)
 
-
-    return gold_df
+    
+    return gold_df , lose_match_gold_by_team
 
 
 # match_
@@ -235,10 +277,10 @@ def get_events(match_data_logs,champion_info,summoner_name):
 
 
         # 게임이 취소된 경우 컬럼이 없음
-        required_columns = ['timestamp', 'type', 'position', 'teamId', 'killerId', 'victimId', 'assistingParticipantIds','victimDamageDealt','victimDamageReceived', 'matchId']
+        required_columns = ['timestamp', 'type','wardType' ,'position', 'teamId','creatorId' ,'killerId', 'victimId', 'assistingParticipantIds','victimDamageDealt','victimDamageReceived', 'matchId']
         if all(column in all_events.columns for column in required_columns):
-            df = all_events[(all_events['type'] == 'CHAMPION_KILL') | (all_events['type'] == 'ELITE_MONSTER_KILL') | (all_events['type'] == 'BUILDING_KILL')]
-            position_logs = df[['timestamp', 'type', 'position', 'teamId', 'killerId', 'victimId', 'assistingParticipantIds','victimDamageDealt','victimDamageReceived', 'matchId']]
+            df = all_events[(all_events['type'] == 'CHAMPION_KILL') | (all_events['type'].str.contains('WARD')|(all_events['type'] == 'ELITE_MONSTER_KILL'))]
+            position_logs = df[['timestamp', 'type', 'wardType' ,'position', 'teamId', 'creatorId' ,'killerId', 'victimId', 'assistingParticipantIds','victimDamageDealt','victimDamageReceived', 'matchId']]
             position_logs_list.append(position_logs)
         else:
             print(f"취소된 매치아이디 {matchId}. Skip.")
@@ -246,10 +288,12 @@ def get_events(match_data_logs,champion_info,summoner_name):
         all_events_list.append(all_events)
 
 
-        # 챔피언킬에 대한 로그
+        # 챔피언킬, 와드와 관련된 로그
         position_logs = pd.concat(position_logs_list)
-        kill_log = position_logs[position_logs['type'] == 'CHAMPION_KILL']
-        kill_log['timestamp'] = kill_log['timestamp']/60000
+        kill_and_ward = position_logs[(position_logs['type'] == 'CHAMPION_KILL')|(position_logs['type'].str.contains('WARD'))]
+        kill_and_ward = kill_and_ward[kill_and_ward['wardType'] != 'UNDEFINED']
+        kill_and_ward['timestamp'] = kill_and_ward['timestamp']/60000
+
 
         # 소환사와 같은팀 정보(vicitmId) - 죽은입장
         team_info = (
@@ -269,32 +313,33 @@ def get_events(match_data_logs,champion_info,summoner_name):
 
 
         # 전체경기(왁굳팀이 당한 기준)
-        wakteam_death_log = pd.merge(kill_log, team_info, on =['matchId','victimId'], how = 'inner')
-        wakteam_death_log = pd.merge(wakteam_death_log,opponent_info, on=['matchId','killerId'], how ='inner' )
+        champ_kill_log = kill_and_ward[kill_and_ward['type'] == 'CHAMPION_KILL']
+        team_death_log = pd.merge(champ_kill_log, team_info, on =['matchId','victimId'], how = 'inner')
+        team_death_log = pd.merge(team_death_log,opponent_info, on=['matchId','killerId'], how ='inner' )
 
         # 소환사가 죽은 death 로그에서 어시스트 정보를 participantId 에서 teamposition 으로 변경
-        def replace_ids_with_names(ids ,match_id):
+        def replace_ids_with_names(assistIds ,match_id):
 
-            if isinstance(ids, list):
-                return [opponent_info.loc[(opponent_info['killerId'] == id) & (opponent_info['matchId'] == match_id), 'killerPosition'].values[0] if pd.notna(id) else None for id in ids]
+            if isinstance(assistIds, list):
+                return [opponent_info.loc[(opponent_info['killerId'] == id) & (opponent_info['matchId'] == match_id), 'killerPosition'].values[0] if pd.notna(id) else None for id in assistIds]
             else:
                 return None
 
 
-        wakteam_death_log['assistingParticipantIds'] = wakteam_death_log.apply(lambda row: replace_ids_with_names(row['assistingParticipantIds'], row['matchId']), axis=1)
+        team_death_log['assistingParticipantIds'] = team_death_log.apply(lambda row: replace_ids_with_names(row['assistingParticipantIds'], row['matchId']), axis=1)
         
         # 소환사의 전체 death 중에서 정글에 의해서, 혹은 정글에게 죽은 death log
-        jungle_death = wakteam_death_log[(wakteam_death_log['killerPosition'] == 'JUNGLE') | (wakteam_death_log['assistingParticipantIds'].apply(lambda x: 'JUNGLE' in x if isinstance(x, list) else False))]
+        jungle_death = team_death_log[(team_death_log['killerPosition'] == 'JUNGLE') | (team_death_log['assistingParticipantIds'].apply(lambda x: 'JUNGLE' in x if isinstance(x, list) else False))]
        
         # 그 중 가장 많이 당한 포지션은?
         victim_by_jungle = jungle_death.groupby(['matchId','timestamp','victimPosition']).size().reset_index(name='cnt')
 
 
-    return kill_log, wakteam_death_log, victim_by_jungle
+    return kill_and_ward, team_death_log, victim_by_jungle
 
 
 
-def duo_score(kill_log,champion_info,summoner_name):    
+def duo_score(kill_and_ward,champion_info,summoner_name):    
     champion_info = champion_info[['matchId','participantId','teamId','teamPosition','summonerName','championName']]
     champion_info.columns = ['matchId','killerId','teamId','killerPosition','summonerName','championName']
 
@@ -307,7 +352,7 @@ def duo_score(kill_log,champion_info,summoner_name):
         else:
             return None
 
-    kill_assist = pd.merge(kill_log, champion_info, on=['matchId','killerId'], how='inner')
+    kill_assist = pd.merge(kill_and_ward, champion_info, on=['matchId','killerId'], how='inner')
     kill_assist['assistingParticipantIds'] = kill_assist.apply(lambda row: replace_ids_with_names(row['assistingParticipantIds'], row['matchId']), axis=1)
 
     # 놀란과 상호작용하여 킬한 로그 (우왁굳, 놀란 킬)
@@ -396,20 +441,20 @@ def calculate_lane(x, y):
 
     for range_ in top_ranges:
         if range_[0] <= x <= range_[1] and range_[2] <= y <= range_[3]:
-            return 'top'
+            return 'TOP'
     for range_ in mid_ranges:
         if range_[0] <= x <= range_[1] and range_[2] <= y <= range_[3]:
-            return 'mid'
+            return 'MIDDLE'
     for range_ in bottom_ranges:
         if range_[0] <= x <= range_[1] and range_[2] <= y <= range_[3]:
-            return 'bottom'
+            return 'BOTTOM'
     for range_ in blue_zone:
         if range_[0] <= x <= range_[1] and range_[2] <= y <= range_[3]:
             return 'blue_zone'
     for range_ in red_zone:
         if range_[0] <= x <= range_[1] and range_[2] <= y <= range_[3]:
             return 'red_zone'
-    return 'jungle' # 나머지는 jungle
+    return 'JUNGLE' # 나머지는 jungle
 
 
 
@@ -434,7 +479,7 @@ def death_spot(df):
 
     # 이미지로 스캐터 플롯 생성
     for x, y in zip(x_data, y_data):
-        url = 'img\death.png'
+        url = 'C:/test/img/death.png'
         img = Image.open(url)
 
         # 원형 이미지로 스캐터 플롯 생성
@@ -442,8 +487,7 @@ def death_spot(df):
         ab = AnnotationBbox(imagebox, (x, y), frameon=False, pad=0)
         ax.add_artist(ab)
 
-    st.pyplot(fig)
-    
+    st.pyplot(fig)    
 
 # 좌표데이터 밀도플롯으로
 def death_spot_sc(df,color):
