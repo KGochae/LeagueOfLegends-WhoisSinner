@@ -472,7 +472,7 @@ def death_spot(df):
     plt.axis('off')
 
     # 지도 이미지 추가
-    map_path = 'C:/test/black_map.jpg'
+    map_path = 'img/black_map.jpg'
     img = Image.open(map_path)
     ax.imshow(img, extent=[0, 15000, 0, 15000])
 
