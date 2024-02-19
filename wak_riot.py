@@ -472,14 +472,14 @@ def death_spot(df):
     plt.axis('off')
 
     # 지도 이미지 추가
-    map_path = 'img/black_map.jpg'
+    map_path = "img/black_map.jpg" 
     img = Image.open(map_path)
     ax.imshow(img, extent=[0, 15000, 0, 15000])
 
 
     # 이미지로 스캐터 플롯 생성
     for x, y in zip(x_data, y_data):
-        url = 'img/death.png'
+        url = "img/death.png"
         img = Image.open(url)
 
         # 원형 이미지로 스캐터 플롯 생성
@@ -506,7 +506,7 @@ def death_spot_sc(df,color):
     plt.axis('off')
 
     # 지도 이미지 추가
-    map_path = 'img/black_map.jpg'
+    map_path = "img/black_map.jpg"
     img = Image.open(map_path)
     ax.imshow(img, extent=[0, 15000, 0, 15000])
 
