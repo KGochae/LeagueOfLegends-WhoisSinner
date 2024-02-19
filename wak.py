@@ -33,36 +33,13 @@ st.set_page_config(layout="wide"
 with open( "wak.css" ) as css:
     st.markdown( f'<style>{css.read()}</style>' , unsafe_allow_html= True)
 
-
-    # st.markdown('''
-    #             <style>
-    #             /* font */
-    #             @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/variable/pretendardvariable-dynamic-subset.css");
-
-    #             *, *::before, *::after {
-    #                 font-family: 'Pretendard Variable';
-    #             }
-
-
-    #             [data-testid=stSidebar] [data-testid=stImage]{
-    #                 text-align: center;
-    #                 display: block;
-    #                 margin-left: auto;
-    #                 margin-right: auto;
-    #                 width: 100%;
-    #             }
-
-    #             </style>
-    #             ''',unsafe_allow_html=True)
-
-
-
+# secrets key
 api_key = (
     # .stremlit/secrets.toml
     st.secrets["RIOTAPI"]
 ).get('api_key')
-
 summoner_name = '메시아빠우왁굳'
+
 # 사이드바
 with st.sidebar:
     with st.form(key ='searchform'):
@@ -77,6 +54,12 @@ with st.sidebar:
 
         st.image('https://i.ibb.co/n3vbJLS/lux.png', width = 150)
         submit_search = st.form_submit_button('우왁굳님의 데이터 불러오기')
+
+        st.markdown(
+            '''             
+            * 우왁굳님의 [반응 보러가기😂](https://vod.afreecatv.com/player/116265471)
+            '''
+        )
 
 
 # header
