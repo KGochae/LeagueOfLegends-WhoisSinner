@@ -73,11 +73,10 @@ if submit_search :
     puuid, summoner_id, iconId = get_puuid(summoner_name, api_key)
     match_ids = get_match_ids(puuid, api_key)
     match_info, champion_info = get_match_v5(match_ids, summoner_name, api_key)
+    match_data_logs = get_match_data_logs(match_ids, api_key)  
 
-    with st.spinner(''' 데이터 분석중(거의 다 왔어요..🫠!)'''):
-        match_data_logs = get_match_data_logs(match_ids, api_key)  
+    with st.spinner(''' 데이터 분석중.. 거의 다 왔어요🫠!'''):
         kill_and_ward, team_death_log, victim_by_jungle = get_events(match_data_logs,champion_info,summoner_name) # kill_and_ward, team_death_log
-
         rank_data = get_rank_info(summoner_id,api_key)
         summoner_radar_data, summoner_vs = radar_chart(match_info,summoner_name,'MIDDLE')
         
@@ -102,7 +101,6 @@ if submit_search :
     st.session_state.gold_df = gold_df
     st.session_state.log_df = log_df
     st.session_state.lose_match_gold_by_team = lose_match_gold_by_team
-
 
 # session_state
 if hasattr(st.session_state, 'puuid'):
