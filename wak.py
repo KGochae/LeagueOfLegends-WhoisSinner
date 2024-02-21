@@ -68,18 +68,15 @@ st.caption(f'''
             '메시아빠우왁굳' 소환사님의 과거의 경기와 현재의 경기를 통해 얼마나 성장했는지 확인해보았습니다.  
             ''')
 
-
-# submit button 시 riot api 및 전처리 함수가 실행됩니다.
+# submit button 클릭시 riot api 및 전처리 함수가 실행됩니다.
 if submit_search :
-    with st.spinner(''' 최근 경기 데이터 수집중..🎮'''):
-        puuid, summoner_id, iconId = get_puuid(summoner_name, api_key)
-        match_ids = get_match_ids(puuid, api_key)
-        match_info, champion_info = get_match_v5(match_ids, summoner_name, api_key)
-        time.sleep(0.5)
+    puuid, summoner_id, iconId = get_puuid(summoner_name, api_key)
+    match_ids = get_match_ids(puuid, api_key)
+    match_info, champion_info = get_match_v5(match_ids, summoner_name, api_key)
+
+    with st.spinner(''' 데이터 분석중(거의 다 왔어요..🫠!)'''):
         match_data_logs = get_match_data_logs(match_ids, api_key)  
         kill_and_ward, team_death_log, victim_by_jungle = get_events(match_data_logs,champion_info,summoner_name) # kill_and_ward, team_death_log
-        # nol_kill_log, chun_kill_log = duo_score(kill_and_ward,champion_info,summoner_name)
-
 
         rank_data = get_rank_info(summoner_id,api_key)
         summoner_radar_data, summoner_vs = radar_chart(match_info,summoner_name,'MIDDLE')
@@ -88,28 +85,23 @@ if submit_search :
         gold_df, lose_match_gold_by_team = lose_match_gold_diff(log_df, summoner_name,'MIDDLE',champion_info)    
 
 
-        # info, match, champion
-        st.session_state.puuid = puuid
-        st.session_state.match_ids = match_ids
-        st.session_state.match_info = match_info
-        st.session_state.match_data_logs = match_data_logs
-        st.session_state.champion_info = champion_info
-        st.session_state.rank_data= rank_data
+    # info, match, champion
+    st.session_state.puuid = puuid
+    st.session_state.match_ids = match_ids
+    st.session_state.match_info = match_info
+    st.session_state.match_data_logs = match_data_logs
+    st.session_state.champion_info = champion_info
+    st.session_state.rank_data= rank_data
 
-        # summoner,death,kill,gold
-        st.session_state.summoner_radar_data = summoner_radar_data
-        st.session_state.summoner_vs = summoner_vs
-        st.session_state.team_death_log = team_death_log
-        st.session_state.victim_by_jungle = victim_by_jungle
-        st.session_state.kill_and_ward = kill_and_ward
-        st.session_state.gold_df = gold_df
-        st.session_state.log_df = log_df
-        st.session_state.lose_match_gold_by_team = lose_match_gold_by_team
-
-        # duo
-        # st.session_state.nol_kill_log = nol_kill_log
-        # st.session_state.chun_kill_log = chun_kill_log
-
+    # summoner,death,kill,gold
+    st.session_state.summoner_radar_data = summoner_radar_data
+    st.session_state.summoner_vs = summoner_vs
+    st.session_state.team_death_log = team_death_log
+    st.session_state.victim_by_jungle = victim_by_jungle
+    st.session_state.kill_and_ward = kill_and_ward
+    st.session_state.gold_df = gold_df
+    st.session_state.log_df = log_df
+    st.session_state.lose_match_gold_by_team = lose_match_gold_by_team
 
 
 # session_state
