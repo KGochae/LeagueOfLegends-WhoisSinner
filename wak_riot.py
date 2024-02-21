@@ -49,28 +49,30 @@ def get_match_ids(puuid, api_key, start= 0, count=65):
 
 
 def get_match_data_logs(match_ids, api_key):
-    match_data_logs = []
-    time_url = 'https://asia.api.riotgames.com/lol/match/v5/matches/{}/timeline?api_key={}'
-    
-    for i, match_id in enumerate(match_ids):
-        url = time_url.format(match_id, api_key)
-        response = requests.get(url)
+    with st.spinner(''' 최근 경기 데이터 수집중..🎮'''):
+        match_data_logs = []
+        time_url = 'https://asia.api.riotgames.com/lol/match/v5/matches/{}/timeline?api_key={}'
         
-        # Check if the status code is 429 (Rate Limit Exceeded)
-        if response.status_code == 429:
-            # Get the Retry-After header value
-            retry_after = int(response.headers['Retry-After'])
-            
-            # Print a message or handle the delay as needed
-            print(f"Rate Limit Exceeded. Waiting for {retry_after} seconds.")
-            
-            # Wait for the specified time before making the next API call
-            time.sleep(retry_after)
-            
-            # Retry the API call after waiting
+        for i, match_id in enumerate(match_ids):
+            url = time_url.format(match_id, api_key)
             response = requests.get(url)
-        
-        match_data_logs.append(pd.DataFrame(response.json()))
+            
+            if response.status_code == 429:
+                # Get the Retry-After header value
+                retry_after = int(response.headers['Retry-After'])                                
+                latest_iteration = st.empty()
+                bar = st.progress(0)            
+                for i in range(retry_after):
+                    latest_iteration.write(f'{retry_after - i} 초 뒤에 데이터 수집이 완료됩니다🫠')
+                    bar.progress((100//retry_after)*i)
+                    time.sleep(1)
+
+                bar.empty()
+                latest_iteration.empty()
+
+            # Retry the API call after waiting
+            response = requests.get(url)            
+            match_data_logs.append(pd.DataFrame(response.json()))
 
     return match_data_logs
 
