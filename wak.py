@@ -49,7 +49,7 @@ with st.sidebar:
         st.subheader("SUMMONER DASHBOARD")
         st.caption('''  
             해당 대시보드는 게임 BJ 우왁굳님의 경기데이터를 기준으로 만들어진 대시보드 입니다. 
-            * RIOT API를 이용하여 최근경기를 수집하며 80초 가량 소요됩니다😓.
+            * RIOT API를 이용해 실시간으로 최근경기를 수집하며 80 ~ 120초 가량 소요됩니다😓.
             ''')
 
         st.image('https://i.ibb.co/n3vbJLS/lux.png', width = 150)
