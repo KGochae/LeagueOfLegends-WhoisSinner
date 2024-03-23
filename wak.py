@@ -1494,7 +1494,6 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                             indexScale={ "type": 'band', "round": 'true'},
                             borderRadius={5},
                             colors=['#459ae5','#a1d99b', '#ada9a9eb'],                   
-                            # colors=[], # {'scheme': 'nivo' }
 
                             innerRadius=0.3,
                             padAngle=0.5,
@@ -1854,7 +1853,6 @@ if hasattr(st.session_state, 'summoner_radar_data'):
 
 
                 gang_line_chart = pd.concat([time_grouped_3,time_grouped_2,time_grouped_1], axis= 1).fillna(0)
-                st.write(gang_line_chart)
                 tab1,tab2 = st.tabs(['GANG','GANG DEATH 좌표'])
                 with tab1:
                     st.bar_chart(gang_line_chart,color=['#fdc086','#459ae5','#ada9a9eb']) #fdc086  #colors=['#459ae5','#a1d99b', '#ada9a9eb'],     
