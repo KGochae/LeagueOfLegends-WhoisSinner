@@ -272,16 +272,6 @@ if hasattr(st.session_state, 'gold_df'):
     gold_15 = to_nivo_line(gold_df,'teamPosition','timestamp','totalGold_diff')
 
 
-# if hasattr(st.session_state, 'lose_match_gold_by_team'):
-#     lose_match_gold_by_team = st.session_state.lose_match_gold_by_team
-    # team_by_gold = lose_match_gold_by_team[lose_match_gold_by_team['timestamp'] < 21]
-
-
-    # team_by_gold = team_by_gold.groupby(['timestamp','teamId']).agg({'totalGold':'mean'}).round().reset_index() #.sort_values(by=['timestamp','teamId'], ascending=[True,True])
-    # team_by_gold['gold_diff'] = team_by_gold.groupby('timestamp')['totalGold'].diff() # .fillna(0).astype(int)
-    # team_by_gold['gold_diff'] = team_by_gold['gold_diff'].fillna(-team_by_gold['gold_diff'].shift(-1))
-    # team_by_gold = to_nivo_line(team_by_gold[team_by_gold['teamId'] == '우리팀'],'teamId','timestamp','gold_diff')
-
 
 if hasattr(st.session_state, 'kill_and_ward'): # ward_log
     kill_and_ward = st.session_state.kill_and_ward 
@@ -732,77 +722,7 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                         # ]
                                     
                                         key="item1",sx=card_sx) #sx=card_sx          
-                            
-                                # mui.Box(
-                                #     children=[                                
-                                #         nivo.Line(
-                                #             data= team_by_gold,
-                                #             margin={'top': 5, 'right': 60, 'bottom': 30, 'left': 0},
-                                #             xScale={'type': 'point'},
-                                #             yScale={
-                                #                 'type': 'linear',
-                                #                 'min': 'auto',
-                                #                 'max': 'auto',
-                                #                 # 'stacked': True,
-                                #                 # 'reverse': False
-                                #             },
-                                #             curve="cardinal",
-
-                                #             axisBottom= None,
-
-                                #             axisLeft=None,
-
-
-                                #             legends=[
-                                #                 {
-                                #                     "anchor": "bottom-left",
-                                #                     "direction": "column",
-                                #                     "translateX": 10,
-                                #                     "translateY": -10,
-                                #                     "itemWidth": 10,
-                                #                     "itemHeight": 15,
-                                #                     "itemTextColor": "white",
-                                #                     "symbolSize": 10,
-                                #                     "symbolShape": "circle",
-                                #                     "effects": [
-                                #                         {
-                                #                             "on": "hover",
-                                #                             "style": {
-                                #                                 "itemTextColor": "white",
-                                #                                 'itemBackground': 'rgba(0, 0, 0, .03)',
-                                #                                 'itemOpacity': 1
-                                #                             }
-                                #                         }
-                                #                     ]
-                                #                 }
-                                #             ],
-
-                                #             colors= {'scheme': 'red_yellow_blue'},
-                                #             enableGridX = False,
-                                #             enableGridY = False,
-                                #             lineWidth=3,
-                                #             pointSize=0,
-                                #             pointColor='white',
-                                #             pointBorderWidth=1,
-                                #             pointBorderColor={'from': 'serieColor'},
-                                #             pointLabelYOffset=-12,
-                                #             enableArea=True,
-                                #             areaOpacity='0.2',
-                                #             useMesh=True,                
-                                #             theme={
-                                #                     "textColor": "white",
-                                #                     "tooltip": {
-                                #                         "container": {
-                                #                             "background": "#3a3c4a",
-                                #                             "color": "white",
-                                #                         }
-                                #                     }
-                                #                 },
-
-                                #             animate= False),
-
-                                #         ]
-                                #           ,key="item2",sx=card_sx ) #sx=card_sx          
+    
                     
                     
 
@@ -1846,30 +1766,6 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                 enableGridY= False,
 
                                 labelSkipWidth={20},
-                                # labelSkipHeight={10},
-                                # legends=[
-                                #     {
-                                #         'dataFrom': 'keys',
-                                #         'anchor': 'top-right',
-                                #         'direction': 'column',
-                                #         'translateX': 0,
-                                #         'translateY': 30,
-                                #         'itemsSpacing': 0,
-                                #         'itemWidth': 80,
-                                #         'itemHeight': 20,
-                                #         'itemDirection': 'left-to-right',
-                                #         'itemOpacity': 0.8,
-                                #         'symbolSize': 15,
-                                #         'effects': [
-                                #             {
-                                #                 'on': 'hover',
-                                #                 'style': {
-                                #                     'itemOpacity': 1
-                                #                 }
-                                #             }
-                                #         ]
-                                #     }
-                                # ],
                                 axisBottom=False,
                                 theme={
                                         # "background": "black",
@@ -1958,7 +1854,7 @@ if hasattr(st.session_state, 'summoner_radar_data'):
 
 
                 gang_line_chart = pd.concat([time_grouped_3,time_grouped_2,time_grouped_1], axis= 1).fillna(0)
-
+                st.write(gang_line_chart)
                 tab1,tab2 = st.tabs(['GANG','GANG DEATH 좌표'])
                 with tab1:
                     st.bar_chart(gang_line_chart,color=['#fdc086','#459ae5','#ada9a9eb']) #fdc086  #colors=['#459ae5','#a1d99b', '#ada9a9eb'],     
@@ -1974,15 +1870,10 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                             ''',unsafe_allow_html= True)
 
                 with tab2:
-                    # st.write(warding_death[warding_death['ward_placed']== False])
                     death_spot(wak_death_gang)        
 
 
 
-
-                    # st.write(wak_death_gang[['timestamp','type']])
-                    # st.dataframe(wak_15_death)
-                    # death_spot(wak_death_jungle)
 
         st.divider()
         with st.container(): # CS지표
@@ -2023,30 +1914,6 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                 enableGridY= False,
 
                                 labelSkipWidth={20},
-                                # labelSkipHeight={10},
-                                # legends=[
-                                #     {
-                                #         'dataFrom': 'keys',
-                                #         'anchor': 'top-right',
-                                #         'direction': 'column',
-                                #         'translateX': 0,
-                                #         'translateY': 30,
-                                #         'itemsSpacing': 0,
-                                #         'itemWidth': 80,
-                                #         'itemHeight': 20,
-                                #         'itemDirection': 'left-to-right',
-                                #         'itemOpacity': 0.8,
-                                #         'symbolSize': 15,
-                                #         'effects': [
-                                #             {
-                                #                 'on': 'hover',
-                                #                 'style': {
-                                #                     'itemOpacity': 1
-                                #                 }
-                                #             }
-                                #         ]
-                                #     }
-                                # ],
                                 axisBottom=False,
                                 theme={
                                         # "background": "black",
@@ -2082,18 +1949,8 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                 st.line_chart(pivot_type, use_container_width=True)
                 
                 
-                # df['cs_rnk'] = df['totalCS10Minutes_mean'].rank(ascending=False)
-                # st.write(df)
-                # st.write(f'''* 10분CS가 가장 좋은 챔피언은 {df[df['cs_rnk']==1]['championName'].iloc[0]}  ''')
                 
-                
-
-            #     st.subheader(''' ✔️ 15분 이후 솔로킬을 당한 좌표 ''')
-                # wak_total_death = team_death_log[team_death_log['summonerName_x']==summoner_name]             
-                # wak_total_death = wak_total_death[(wak_total_death['assistingParticipantIds'].isna()) & (wak_total_death['timestamp'] > 15)] 
-                # st.write(wak_total_death)
-                # death_spot(wak_total_death)
-                # st.write(match_ids)
+            
 
 
 
