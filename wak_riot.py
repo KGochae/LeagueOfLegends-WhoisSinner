@@ -23,20 +23,48 @@ matplotlib.use('Agg')  # Use the 'agg' backend
 
 # Create API client.
 api_key  = st.secrets.RIOTAPI.api_key
-version = '14.1.1'
 
+# 최신버전 
+def DDRAGON_VER():
+    url = 'https://ddragon.leagueoflegends.com/api/versions.json'
+    response = requests.get(url)
+    version = response.json()[0] # 가장 최근 버전
+    return version 
+version = DDRAGON_VER()
 
-# 매치 데이터 가져오기
-def get_puuid(summoner_name, api_key):
+# 유저 정보
+def get_puuid(summoner_name, tagline, api_key):
     # Get summoner puuid
-    sohwan = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/{}?api_key={}"
-    url = sohwan.format(summoner_name, api_key)
+    sohwan  = "https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{}/{}?api_key={}"
+    url = sohwan.format(summoner_name, tagline, api_key)
     response = requests.get(url)
     puuid = response.json()['puuid']
+
+    # Get summoner id
+    sowhan = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{}?api_key={}" 
+    url = sowhan.format(puuid, api_key)
+    response = requests.get(url)
     summoner_id = response.json()['id']
     iconId = response.json()['profileIconId']
 
-    return puuid, summoner_id, iconId
+    return  puuid, summoner_id, iconId
+
+
+
+
+
+
+# 매치 데이터 가져오기
+# def get_puuid(summoner_name, api_key):
+#     # Get summoner puuid
+#     sohwan = "https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/{}?api_key={}"
+#     url = sohwan.format(summoner_name, api_key)
+#     response = requests.get(url)
+#     puuid = response.json()['puuid']
+#     summoner_id = response.json()['id']
+#     iconId = response.json()['profileIconId']
+
+#     return puuid, summoner_id, iconId
 
 
 def get_match_ids(puuid, api_key, start= 0, count=30):
