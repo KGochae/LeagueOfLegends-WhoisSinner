@@ -341,8 +341,7 @@ if hasattr(st.session_state, 'rank_data'):
 if hasattr(st.session_state, 'summoner_radar_data'):
     summoner_radar_data = st.session_state.summoner_radar_data
     # min_value_var = min(summoner_radar_data, key=lambda x: x[f'{summoner_name}'])["var"]    
-        with st.container():
-
+    with st.container():
             # MAIN - WAKGOOD
             col1,col2 = st.columns([2,4])
             with col1: 
