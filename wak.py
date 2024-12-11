@@ -340,10 +340,7 @@ if hasattr(st.session_state, 'rank_data'):
 # 능력치 radar 차트
 if hasattr(st.session_state, 'summoner_radar_data'):
     summoner_radar_data = st.session_state.summoner_radar_data
-    # min_value_var = min(summoner_radar_data, key=lambda x: x[f'{summoner_name}'])["var"]
-    
-
-    def main():
+    # min_value_var = min(summoner_radar_data, key=lambda x: x[f'{summoner_name}'])["var"]    
         with st.container():
 
             # MAIN - WAKGOOD
