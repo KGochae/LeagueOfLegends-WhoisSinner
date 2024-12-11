@@ -1000,7 +1000,7 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                                             "height": 60,
                                                             "width": 60,
                                                             "borderRadius": "10%",
-                                                            "backgroundImage": f"url(https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-{death_solo_16[4]['victimPosition'].lower()}.png)"
+                                                            "backgroundImage": f"url(https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-middle.png)" # {death_solo_16[4]['victimPosition'].lower()}
                                                         },
                                                     ),
                                                     mui.Typography(
