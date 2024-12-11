@@ -23,6 +23,9 @@ matplotlib.use('Agg')  # Use the 'agg' backend
 
 # Create API client.
 api_key  = st.secrets.RIOTAPI.api_key
+summner_name= '메시아빠우왁굳'
+tagline = 'KR1'
+
 
 # 최신버전 
 def DDRAGON_VER():
@@ -48,9 +51,6 @@ def get_puuid(summoner_name, tagline, api_key):
     iconId = response.json()['profileIconId']
 
     return  puuid, summoner_id, iconId
-
-
-
 
 
 
