@@ -38,7 +38,9 @@ api_key = (
     # .stremlit/secrets.toml
     st.secrets["RIOTAPI"]
 ).get('api_key')
+
 summoner_name = '메시아빠우왁굳'
+tagline = 'KR1'
 
 # 사이드바
 with st.sidebar:
@@ -70,7 +72,7 @@ st.caption(f'''
 
 # submit button 클릭시 riot api 및 전처리 함수가 실행됩니다.
 if submit_search :
-    puuid, summoner_id, iconId = get_puuid(summoner_name, api_key)
+    puuid, summoner_id, iconId = get_puuid(summoner_name, tagline, api_key)
     match_ids = get_match_ids(puuid, api_key)
     match_info, champion_info = get_match_v5(match_ids, summoner_name, api_key)
     match_data_logs = get_match_data_logs(match_ids, api_key)  
