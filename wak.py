@@ -1312,10 +1312,9 @@ if hasattr(st.session_state, 'summoner_radar_data'):
 
 
 # ------------------------------------------------------------- 소환사 성장 지표 ---------------------------------------------------------------------------#
-        st.divider()
+    st.divider()
 
-
-        with st.container():
+    with st.container():
             
             st.header('📈 오늘의 나는.. 어제의 나와 다르다.')
             st.caption('''
@@ -1722,9 +1721,9 @@ if hasattr(st.session_state, 'summoner_radar_data'):
 
 
 
-        st.divider()
+    st.divider()
 
-        with st.container() : # 사야점수에 관하여
+    with st.container() : # 사야점수에 관하여
             col1,col2 = st.columns([2,1])
             with col1:
                 with elements("wak_indicator_vision"):                
@@ -1871,8 +1870,8 @@ if hasattr(st.session_state, 'summoner_radar_data'):
 
 
 
-        st.divider()
-        with st.container(): # CS지표
+    st.divider()
+    with st.container(): # CS지표
             col1,col2 = st.columns([2,1])
             with col1: 
                 with elements("wak_indicator_GOLD"):                
@@ -1946,5 +1945,7 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                 
                 
                 
+          
+
           
 
