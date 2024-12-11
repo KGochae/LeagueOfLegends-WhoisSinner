@@ -39,7 +39,7 @@ def get_puuid(summoner_name, api_key):
     return puuid, summoner_id, iconId
 
 
-def get_match_ids(puuid, api_key, start= 0, count=65):
+def get_match_ids(puuid, api_key, start= 0, count=30):
     # Get match ids
     matchid_url = "https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?type=ranked&start={}&count={}&api_key={}"
     url = matchid_url.format(puuid, start, count, api_key)
