@@ -258,7 +258,7 @@ def lose_match_gold_diff(log_df,summoner_name,teamPosition,champion_info):
     gold = log_df[['matchId','timestamp','participantId','position','totalGold','xp','level']]
     champion_info = champion_info[['matchId','participantId','teamId','teamPosition','summonerName','championName','win']]
     gold_df = pd.merge(gold, champion_info, on=['matchId', 'participantId'], how='inner')
-    lose_match_list = champion_info[(champion_info['summonerName'] == summoner_name) & (champion_info['teamPosition']== teamPosition) ]['matchId'].tolist() # & (champion_info['win']== False)
+    lose_match_list = champion_info[(champion_info['summonerName'] == summoner_name) & (champion_info['teamPosition']== teamPosition) & (champion_info['win']== False)]['matchId'].tolist() 
 
     # 진경기 
     lose_match_gold = gold_df[gold_df['matchId'].isin(lose_match_list)].groupby(['matchId','timestamp','win','teamPosition']).agg({'totalGold':'sum'}).reset_index()
