@@ -415,7 +415,7 @@ if hasattr(st.session_state, 'summoner_radar_data'):
                                                         sx={
                                                             "height":50,
                                                             "width":100,                                     
-                                                            "backgroundImage": f"url(https://i.ibb.co/2ZrRXqP/tft-regalia-{tier}.png)",  
+                                                            # "backgroundImage": f"url(https://i.ibb.co/2ZrRXqP/tft-regalia-{tier}.png)",  
                                                         },               
                                                         title='티어'                         
                                                     )                                        
