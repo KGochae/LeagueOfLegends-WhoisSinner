@@ -1,8 +1,7 @@
 ### issue..
-> 이전 시즌의 데이터가 날라가.. 대시보드에 문제가 생겼습니다.
+> 이전 시즌의 데이터가 날라가.. 대시보드에 문제가 생겼습니다...😢
 
 # 🖥️ LeagueOfLegends-WhoisSinner?
-* ### 실제 [대시보드](https://wakgood-dashbaord.streamlit.app/)를 위 링크를 통해 구경하실 수 있으며! 정리된 내용은 pdf/ 파일안에 요약되어 있습니다! 😁 
 
 ## 디렉토리 
 
